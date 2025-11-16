@@ -21,7 +21,7 @@ import string
 from random import choices
 from permute import permute
 
-from mpmath import gammainc
+from mpmath import gammainc, ncdf
 
 cand_names = string.digits + string.ascii_uppercase
 assert len(cand_names) == 36
@@ -61,22 +61,23 @@ def check(NCANDS, HILIMIT=500):
     for v in counts.values():
         chi += (v - expect)**2
     chi /= expect
-    z = (chi - df) / sqrt(2 * df)
+    sigma = sqrt(2.0 * df)
+    z = (chi - df) / sigma
     print("    chisq", round(chi, 1),
           "- should be centered around", df,
           "and z is", format(z, "+.2f"))
-    print("    chi CDF next; if nbins is large, this may blow up ...",
+    print("    chi CDF ...",
           end=' ')
     try:
+        # mpmath can fail to coverge when df gets very large
         p = chi2_cdf(chi, df)
     except Exception as e:
-        print("yup, blew up")
-        print("       ", e)
-    else:
-        print(round(p, 3), end='')
-        if not 0.05 <= p <= 0.95:
-            print(' '.ljust(30, '*'), end='')
-        print()
+        print("falling back on normal approximation", end=" ")
+        p = ncdf(chi, df, sigma)
+    print(round(p, 3), end='')
+    if not 0.05 <= p <= 0.95:
+        print(' '.ljust(30, '*'), end='')
+    print()
 
 for ncands in range(2, 12):
     for i in range(5):
