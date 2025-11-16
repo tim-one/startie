@@ -40,29 +40,32 @@ def check(NCANDS, HILIMIT=500):
     print("num cands", NCANDS, "high score limit", HILIMIT,
           "nbins", format(nbins, '_'),
           "expected per bin", expect)
-    for i in range(total):
+    for i in range(1, total + 1):
         score = dict(zip(cands, choices(scorerange, k=NCANDS)))
         counts[''.join(permute(score))] += 1
         if not i & 0xffff:
             print(format(i / total, '.2%'), end="\r")
     print(' ' * 50, end="\r")
-    chi = (nbins - len(counts)) * expect
-    if chi:
-        print("OUCH! number of bins", len(counts), "isn't", nbins)
+    missing = nbins - len(counts)
+    assert missing >= 0
+    chi = 0.0
+    if missing:
+        print("    OUCH!", missing, "bins are empty")
+        chi = missing * expect**2
     for v in counts.values():
         chi += (v - expect)**2
     chi /= expect
     z = (chi - df) / sqrt(2 * df)
-    print("chisq", round(chi, 1),
+    print("    chisq", round(chi, 1),
           "- should be centered around", df,
           "and z is", format(z, "+.2f"))
-    print("chi CDF next; if nbins is large, this may blow up ...",
+    print("    chi CDF next; if nbins is large, this may blow up ...",
           end=' ')
     try:
         p = chi2_cdf(chi, df)
     except Exception as e:
         print("yup, blew up")
-        print(e)
+        print("   ", e)
     else:
         print(round(p, 3), end='')
         if not 0.05 <= p <= 0.95:
