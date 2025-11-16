@@ -24,7 +24,7 @@ The primary files are `permute.py` and `permute.js`. Each supplies one function,
 
 `compare_driver.py` constructs random score dicts and ensures that the Python and Node implementations produce the same permutations. Edit it to change the number of test cases run, the number of candidates, and the maximum candidate score. That's less work for you too than trying to remember command line conventions :wink:.
 
-`chitest.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates.
+`chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates.
 
 ## Acks
 
