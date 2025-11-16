@@ -35,8 +35,9 @@
 # key.
 
 # So what does work for a salt is building a canonical representation of
-# the entire score dict, a catenation of name score name score name
-# score ... where the names are in increasing order of their UTF-8 byte
+# the entire score dict, a catenation of
+#      name score name score name score ...
+# where the names are in increasing order of their UTF-8 byte
 # representations. That will produce the same stream of bytes on all
 # platforms.
 
@@ -44,6 +45,8 @@ import hashlib
 
 VERSION = b"STAR-TIE-512-v1"
 
+# Return little-endian represetation of int `n`,
+# followed by 4 zero bytes.
 def int2bytes(n: int) -> bytearray:
     if n < 0:
         raise ValueError("n must be nonnegative")
@@ -55,17 +58,16 @@ def int2bytes(n: int) -> bytearray:
     return out
 
 def canonical_salt(score: dict[str, int]) -> hashlib._Hash:
+    h = hashlib.sha512(VERSION + b'|')
     # Sort candidate names by raw UTF-8 bytes
-    items = sorted(score.items(),
-                   key=lambda kv: kv[0].encode("utf-8"))
-    stream = bytearray(VERSION)
-    stream.extend(b'|')
-    for name, stars in items:
-        name_bytes = name.encode("utf-8")
-        stream.extend(len(name_bytes).to_bytes(4, "little"))
-        stream.extend(name_bytes)
-        stream.extend(int2bytes(stars))
-    return hashlib.sha512(stream)
+    items = [(name.encode("utf-8"), s)
+             for name, s in score.items()]
+    items.sort()
+    for name_bytes, stars in items:
+        h.update(len(name_bytes).to_bytes(4, "little"))
+        h.update(name_bytes)
+        h.update(int2bytes(stars))
+    return h
 
 def make_key(cand: str,
              score: dict[str, int],
