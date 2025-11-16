@@ -16,7 +16,7 @@
 # and also a CDF over 0,95.
 
 from collections import defaultdict
-from math import factorial, sqrt
+from math import factorial, sqrt, nan
 from string import ascii_uppercase
 from random import choices
 from permute import permute
@@ -34,7 +34,7 @@ def check(NCANDS, HILIMIT=500):
     cands = ascii_uppercase[:NCANDS]
     nbins = factorial(NCANDS)
     df = nbins - 1
-    expect = 50.0
+    expect = 10.0
     total = int(expect) * nbins
     counts = defaultdict(int)
     print("num cands", NCANDS, "high score limit", HILIMIT,
@@ -46,7 +46,9 @@ def check(NCANDS, HILIMIT=500):
         if not i & 0xffff:
             print(format(i / total, '.2%'), end="\r")
     print(' ' * 50, end="\r")
-    chi = 0.0
+    chi = (nbins - len(counts)) * expect
+    if chi:
+        print("OUCH! number of bins", len(counts), "isn't", nbins)
     for v in counts.values():
         chi += (v - expect)**2
     chi /= expect
@@ -54,13 +56,20 @@ def check(NCANDS, HILIMIT=500):
     print("chisq", round(chi, 1),
           "- should be centered around", df,
           "and z is", format(z, "+.2f"))
-    if len(counts) != nbins:
-        print("OUCH! number of bins", len(counts), "isn't", nbins)
     print("chi CDF next; if nbins is large, this may blow up ...",
           end=' ')
-    print(format(round(chi2_cdf(chi, df), 3)))
+    try:
+        p = chi2_cdf(chi, df)
+    except Exception as e:
+        print("yup, blew up")
+        print(e)
+    else:
+        print(round(p, 3), end='')
+        if not 0.05 <= p <= 0.95:
+            print(' '.ljust(30, '*'), end='')
+        print()
 
 for ncands in range(2, 11):
-    for i in range(3):
+    for i in range(5):
         check(ncands)
     print()
