@@ -17,11 +17,14 @@
 
 from collections import defaultdict
 from math import factorial, sqrt, nan
-from string import ascii_uppercase
+import string
 from random import choices
 from permute import permute
 
 from mpmath import gammainc
+
+cand_names = string.digits + string.ascii_uppercase
+assert len(cand_names) == 36
 
 def chi2_cdf(x, df):
     """Return probability that a value from a chi square distribution
@@ -31,7 +34,7 @@ def chi2_cdf(x, df):
 
 def check(NCANDS, HILIMIT=500):
     scorerange = range(HILIMIT)
-    cands = ascii_uppercase[:NCANDS]
+    cands = cand_names[:NCANDS]
     nbins = factorial(NCANDS)
     df = nbins - 1
     expect = 10.0
@@ -42,7 +45,10 @@ def check(NCANDS, HILIMIT=500):
           "expected per bin", expect)
     for i in range(1, total + 1):
         score = dict(zip(cands, choices(scorerange, k=NCANDS)))
-        counts[''.join(permute(score))] += 1
+        # Due to our choice of candidate names, a permutation can be
+        # uniquely and compactly represented as a base-NCANDS integer
+        # with NCANDS digits. Saves RAM over using string keys.
+        counts[int(''.join(permute(score)), NCANDS)] += 1
         if not i & 0xffff:
             print(format(i / total, '.2%'), end="\r")
     print(' ' * 50, end="\r")
@@ -65,14 +71,14 @@ def check(NCANDS, HILIMIT=500):
         p = chi2_cdf(chi, df)
     except Exception as e:
         print("yup, blew up")
-        print("   ", e)
+        print("       ", e)
     else:
         print(round(p, 3), end='')
         if not 0.05 <= p <= 0.95:
             print(' '.ljust(30, '*'), end='')
         print()
 
-for ncands in range(2, 11):
+for ncands in range(2, 12):
     for i in range(5):
         check(ncands)
     print()
