@@ -7,7 +7,7 @@
 #
 # For reliability, we need to expect to see every permutation at least
 # about 20 times - so over 70 million tries for just 10 candidates! At
-# which point mpmath's gamminc is close to blowing up when computind the
+# which point mpmath's gamminc is close to blowing up when computing the
 # chi2 CDF (convergence too slow).
 #
 # Note that CDF values less thab 0.05 and greater than 0.95 are
@@ -25,7 +25,7 @@ from mpmath import gammainc
 
 def chi2_cdf(x, df):
     """Return probability that a value from a chi square distribution
-       with `df` degrees of freedom has value >= `x`."""
+       with `df` degrees of freedom has value <= `x`."""
 
     return float(gammainc(df/2, 0, x/2, True))
 
@@ -51,11 +51,13 @@ def check(NCANDS, HILIMIT=500):
     chi /= expect
     print("chisq", round(chi, 1),
           "- should be centered around", nbins - 1)
+    if len(counts) != nbins:
+        print("OUCH! number of bins", len(counts), "isn't", nbins)
     print("chi CDF next; if nbins is large, this may blow up ...",
           end=' ')
     print(format(round(chi2_cdf(chi, nbins - 1), 3)))
 
-for ncands in range(2, 10):
+for ncands in range(2, 11):
     for i in range(3):
         check(ncands)
     print()
