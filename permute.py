@@ -7,15 +7,15 @@
 # UTF-8 is supported everywhere, but has to be forced.
 
 # If we used the name alone, then the permutation would depend _only_ on
-# the candidate's names. 100% predictable and trivial to manipulate.
+# the candidates' names. 100% predictable and trivial to manipulate.
 
 # Folding in the score too makes it unpredictable in the small, but
 # still kind of exploitable in the large: it's feasible to predict a
 # range of scores, and then play games with a name, adjusting via
 # poke-nnd-hope to find a spelling that leaves the name near the start
-# of the permutation acres the range of plausible soores. Unicode offers
-# a world of possibilities for fiddling names in ways that appear very
-# similar(or even identical). Also minor spelling variations.
+# of the permutation across the range of plausible scores. Unicode
+# offers a world of possibilities for fiddling names in ways that appear
+# very similar(or even identical). Also minor spelling variations.
 
 # So we want it "even more unpredictable". A standard way to do that is
 # to use a "salt": another unpredictable value folded in to _every_
@@ -35,10 +35,9 @@
 # key.
 
 # So what does work for a salt is building a canonical representation of
-# the entire score dict, a catenation of
-#     bame score name score name score ...
-# where the names are in increasing order of their UTF-8 byte
-# representations. That will produced the same stream of bytes on all
+# the entire score dict, a catenation of name score name score name
+# score ... where the names are in increasing order of their UTF-8 byte
+# representations. That will produce the same stream of bytes on all
 # platforms.
 
 import hashlib
