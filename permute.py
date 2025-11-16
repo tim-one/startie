@@ -54,7 +54,7 @@ def int2bytes(n: int) -> bytearray:
     out.extend(b"\x00\x00\x00\x00")
     return out
 
-def canonical_salt(score: dict[str, int]):
+def canonical_salt(score: dict[str, int]) -> hashlib._Hash:
     # Sort candidate names by raw UTF-8 bytes
     items = sorted(score.items(),
                    key=lambda kv: kv[0].encode("utf-8"))
@@ -67,7 +67,9 @@ def canonical_salt(score: dict[str, int]):
         stream.extend(int2bytes(stars))
     return hashlib.sha512(stream)
 
-def make_key(cand: str, score: dict[str, int], salt) -> bytes:
+def make_key(cand: str,
+             score: dict[str, int],
+             salt: hashlib._Hash) -> bytes:
     h = salt.copy()
     h.update(cand.encode("utf-8"))
     h.update(int2bytes(score[cand]))
