@@ -66,17 +66,17 @@ def check(NCANDS, HILIMIT=500):
     print("    chisq", round(chi, 1),
           "- should be centered around", df,
           "and z is", format(z, "+.2f"))
-    print("    chi CDF ...",
-          end=' ')
-    try:
-        # mpmath can fail to coverge when df gets very large
+    print("    chi CDF (", end='')
+    # gammainc can fail to coverge when df gets very large
+    if NCANDS < 10:
+        print("gammainc", end='')
         p = chi2_cdf(chi, df)
-    except Exception as e:
-        print("falling back on normal approximation", end=" ")
+    else:
+        print("normal", end='')
         p = ncdf(chi, df, sigma)
-    print(round(p, 3), end='')
+    print(')', round(p, 3), end='')
     if not 0.05 <= p <= 0.95:
-        print(' '.ljust(30, '*'), end='')
+        print(' '.ljust(50, '*'), end='')
     print()
 
 for ncands in range(2, 12):
