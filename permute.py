@@ -43,6 +43,8 @@
 
 import hashlib
 
+# Calling canonical_salt({}) will return a digest with the hash of
+# VERSION. See versions.txt for history.
 VERSION = b"STAR-TIE-512-v1"
 
 # Return little-endian represetation of int `n`,
@@ -58,15 +60,13 @@ def int2bytes(n: int) -> bytearray:
     return out
 
 def canonical_salt(score: dict[str, int]) -> hashlib._Hash:
-    h = hashlib.sha512(VERSION + b'|')
+    h = hashlib.sha512(VERSION)
     # Sort candidate names by raw UTF-8 bytes
     items = [(name.encode("utf-8"), s)
              for name, s in score.items()]
     items.sort()
     for name_bytes, stars in items:
-        h.update(len(name_bytes).to_bytes(4, "little"))
-        h.update(name_bytes)
-        h.update(int2bytes(stars))
+        h.update(name_bytes + b'\x00' + int2bytes(stars))
     return h
 
 def make_key(cand: str,
@@ -85,3 +85,5 @@ def permute(score: dict[str, int]) -> list[str]:
 # Example
 # score = {"Alice": 5, "Bob": 3, "Charlie": 7}
 # print(permute(score))
+
+assert canonical_salt({}).hexdigest() == hashlib.sha512(VERSION).hexdigest()

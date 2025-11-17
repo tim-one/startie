@@ -1,0 +1,4 @@
+# The result of canonical_salt({}).hexdigest() under different versions:
+#
+#version           salt
+ STAR-TIE-512-v1   df03ab8ceee317bf2b772a2470e32507ca8342d0814021b07799d895bcda70a9e97f4c312086d7ef91c2941b0644cbd1b49dfa4fb68925ca0dc30fdc65d91ccf
