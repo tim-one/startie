@@ -2,13 +2,13 @@ const crypto = require('crypto');
 
 function int2bytes(n) {
   if (n < 0) throw new Error("n must be nonnegative");
-  const bytes = [];
+  const bytes = [0];
   let x = n;
   while (x > 0) {
     bytes.push(x & 0xff);
     x = Math.floor(x / 256);
   }
-  bytes.push(0, 0, 0, 0);
+  bytes.push(0);
   return Buffer.from(bytes);
 }
 
@@ -19,7 +19,7 @@ function canonicalSalt(score) {
   stream.push(...Buffer.from("STAR-TIE-512-v1", 'utf8'));
   for (const [name, stars] of items) {
     const nameBytes = Buffer.from(name, 'utf8');
-    stream.push(...nameBytes, 0, ...int2bytes(stars));
+    stream.push(...nameBytes, ...int2bytes(stars));
   }
   return Buffer.from(stream);
 }

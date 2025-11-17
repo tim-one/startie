@@ -49,16 +49,19 @@ __all__ = ["permute"]
 # VERSION. See versions.txt for history.
 VERSION = b"STAR-TIE-512-v1"
 
-# Return little-endian represetation of int `n`,
-# followed by 4 zero bytes.
+# Return little-endian represetation of int `n`, with a zero byte added
+# to both ends. The latter is to prevent ints from being mistaken for
+# UTF-8 bytes when catenating fields (UTF-8 never contains a zero byte
+# unless it's a single-character 0 byte, which won't appear in candidate
+# names).
 def _int2bytes(n: int) -> bytearray:
     if n < 0:
         raise ValueError("n must be nonnegative")
-    out = bytearray()
+    out = bytearray([0])
     while n:
         out.append(n & 0xff)
         n >>= 8
-    out.extend(b"\x00\x00\x00\x00")
+    out.append(0)
     return out
 
 def _canonical_salt(score: dict[str, int]) -> hashlib._Hash:
@@ -68,15 +71,14 @@ def _canonical_salt(score: dict[str, int]) -> hashlib._Hash:
              for name, s in score.items()]
     items.sort()
     for name_bytes, stars in items:
-        h.update(name_bytes + b'\x00' + _int2bytes(stars))
+        h.update(name_bytes + _int2bytes(stars))
     return h
 
 def _make_key(cand: str,
               score: dict[str, int],
               salt: hashlib._Hash) -> bytes:
     h = salt.copy()
-    h.update(cand.encode("utf-8"))
-    h.update(_int2bytes(score[cand]))
+    h.update(cand.encode("utf-8") + _int2bytes(score[cand]))
     return h.digest()
 
 def permute(score: dict[str, int]) -> list[str]:
