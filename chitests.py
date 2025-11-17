@@ -12,8 +12,8 @@
 #
 # Note that CDF values less thab 0.05 and greater than 0.95 are
 # generally "suspicious". But not to fret over! If the process were
-# truly random, we'd expect to see a CDF under 0.05 about 5% of time,
-# and also a CDF over 0,95.
+# truly random, we'd expect to see a CDF under 0.05 about 5% of the
+# time, and also a CDF over 0.95.
 
 from collections import defaultdict
 from math import factorial, sqrt, nan
