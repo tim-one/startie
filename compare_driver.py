@@ -1,8 +1,6 @@
 import json, random, subprocess, sys, unicodedata
 from permute import permute  # Python implementation
 
-# sys.stdout.reconfigure(encoding='utf-8')
-
 printable_chars = tuple(
     filter(
         lambda ch: ch.isprintable()

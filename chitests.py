@@ -37,7 +37,10 @@ def check(NCANDS, HILIMIT=500):
     cands = cand_names[:NCANDS]
     nbins = factorial(NCANDS)
     df = nbins - 1
-    expect = 10.0
+    # I'd like this to be at least 10.0 (the higher the better), but the
+    # time taken is directly proportioal to this. 5.0 is about the
+    # abolutw minimun for chi-square testa to be reliable.
+    expect = 6.0
     total = int(expect) * nbins
     counts = defaultdict(int)
     print("num cands", NCANDS, "high score limit", HILIMIT,
@@ -56,7 +59,7 @@ def check(NCANDS, HILIMIT=500):
     assert missing >= 0
     chi = 0.0
     if missing:
-        print("    OUCH!", missing, "bins are empty")
+        print("   ", missing, "bins are empty")
         chi = missing * expect**2
     for v in counts.values():
         chi += (v - expect)**2
@@ -79,6 +82,13 @@ def check(NCANDS, HILIMIT=500):
         print(' '.ljust(50, '*'), end='')
     print()
 
+# Time and RAM consumed are proportional to factorial(ncands). 11 is the
+# largest I can do on my box with 16GB of RAM, but takes "way too long"
+# for routine use (I kill the job). 12 would be plausible, but I'd need
+# to switch to a more compact (and slower) way to record how often each
+# permutation was seen, and probably swith to pypy (which can store
+# native machine ints without "object overhead" - but is slower at
+# computing crypto hashes). Too much effort for too little gain.
 for ncands in range(2, 12):
     for i in range(5):
         check(ncands)
