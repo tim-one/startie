@@ -26,6 +26,22 @@ The primary files are `permute.py` and `permute.js`. Each supplies one function,
 
 `chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates.
 
+## Q&A
+
+**Q:** What remains to be done? Do you want help?
+
+**A:** I'm happy with the design and the Python code, and testing has gone very well. But I'm not a native JavaScript speaker, and would really appreciate it if someone who is reviewed the JS code for "common sense" and idiomatic expression. Most of it was pasted from code suggested by a chatbot! It works, but is still a foreign language to me.
+
+**Q:** When building the "canonical salt", the Python code returns a hashlib object, but the JS code a buffer of raw bytes. Is that an error?
+
+**A:** Sure hope not :wink:. This is due to that JS's crypto-hash API doesn't appear to offer a `.copy()` method. We're feeding the same initial raw bytes into the hash for every candidates' key, and using `.copy()` for that is the _purpose_ of `.copy()`. It's not really for efficiency (although it is faster), but for conceptual clarity. The JS code has no choice but to feed those raw prefix bytes into the key hashes repeatedly. The outcomes in the end are identical.
+
+**Q:** Unicode always causes problems. Which ones have you missed?
+
+**A:** Time will tell, but none that I know of. There are several standard ways of encoding Unicode code points, but correctly implemented conversions between any pair are lossless and reversible. We use UTF-8 because every language can convert to that, and a sequence of bytes is exactly what this algorithm needs. There's generally a minor problem when computing a crypto hash from multiple fields: the input bytes of one field are catenated with the inputs bytes of the next, and the idea that they're _different_ fields gets lost. But, in UTF-8, a zero byte never appears unless it's the one-character ANSI 0 byte, and candidate names will never contain one of those. So so we generally alternate UTF-8 input fields with integer fields, and the latter are guaranteed (by construction) to have a 0 byte at each end. So one field can't be accidentally mistaken as part of a different field.
+
+Other _potential_ problems could come from "normalization", fancy schemes that actually change code points. We certainly do none of that, and I doubt any voting service would either. They're just using Unicode to display candidate names faithfully, not analyzing them or doing computation on them.
+
 ## Acks
 
 - Thanks to Larry Hastings, for talks about this kind of approach when he was writing his lovely [starvote](https://github.com/larryhastings/starvote) library. The idea here is similar, but less ambitious, simpler, and much less tied to Python quirks. Larry uses a crypto hash to seed Python's Mersenne Twister; we don't use a conventional PRNG at all. Larry goes on to build a crypto hash of all the ballots, but we only look at the score dict. That's partly for efficiency, but also looking forward to a future when STAR is the only voting method in use 😄. Then "precinct summability" becomes important - there may not be a "collection of ballots" in one place _to_ look at, just a sum of score dicts aggregated from different precincts.
@@ -33,3 +49,5 @@ The primary files are `permute.py` and `permute.js`. Each supplies one function,
 - Thanks to the folks at the [STAR voting service](https://bettervoting.com/). for discussions, interest, encouragement, and contributing code to an earlier attempt at writing a cross-language "good enough" pseudo-random list shuffler. I've given up on that, as finding a "provably fair and secure" way to _seed_ it proved to be a bottomless pit. If the STAR folks adopt this new approach, I'll pester Larry to add it as an optional way for `starvote` to break ties too.
 
 - And special thanks to ChatGPT-5! It knows a whole lot more about JavaScript than I know, and most of its suggestions worked on the first try. It also showed shockingly deep insights into the nuances of the problem domain, such as why the central limit theorem played a key role in why an earlier attempt produced demonstrably biased permutations.
+
+
