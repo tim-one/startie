@@ -34,7 +34,7 @@ The primary files are `permute.py` and `permute.js`. Each supplies one function,
 
 **Q:** When building the "canonical salt", the Python code returns a hashlib object, but the JS code a buffer of raw bytes. Is that an error?
 
-**A:** Sure hope not :wink:. This is due to that JS's crypto-hash API doesn't appear to offer a `.copy()` method. We're feeding the same initial raw bytes into the hash for every candidates' sort key, and using `.copy()` for that is the _purpose_ of `.copy()`. It's not really for efficiency (although it is faster), but for conceptual clarity. The JS code has no choice but to feed those raw prefix bytes into the key hashes repeatedly. The outcomes in the end are identical.
+**A:** Sure hope not :wink:. This is due to that JS's crypto-hash API doesn't appear to offer a `.copy()` method. We're feeding the same initial raw bytes into the hash for every candidates' sort key, and using `.copy()` for that is the _purpose_ of `.copy()`. It's not really for efficiency (although it is faster), but for conceptual clarity. The JS code has no choice but to feed those raw prefix bytes into the sort key hashes repeatedly. The outcomes in the end are identical.
 
 **Q:** Unicode always causes problems. Which ones have you missed?
 
