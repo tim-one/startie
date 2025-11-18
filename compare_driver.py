@@ -2,26 +2,31 @@ import json, random, subprocess, sys
 from itertools import filterfalse
 from permute import permute  # Python implementation
 
-FORBIDDEN_CODEPOINTS = (
-      # surrogates
-      set(range(0xD800, 0xDFFF + 1))
-      # non-characters
-    | set(range(0xFDD0, 0xFDEF + 1))
-      # non-characters at the end of each plane
-    | set(hi | lo
-          for hi in range(0x000000, 0x10FFFF + 1, 0x10000)
-          for lo in (0xFFFE, 0xFFFF)))
-
+FORBIDDEN_CODEPOINTS = range(0xD800, 0xDFFF + 1) # surrogates
 print(format(len(FORBIDDEN_CODEPOINTS), '_'),
       "forbidden code points")
-ALLCP = range(0x110000)
 ISBADCP = FORBIDDEN_CODEPOINTS.__contains__
+ALLCP = range(0x110000)
+
+if 1:
+    # verify by brute force that Python has the same idea.
+    for i in ALLCP:
+        cp = chr(i)
+        try:
+            ignore = cp.encode("utf-8")
+        except:
+            assert ISBADCP(i), (i, hex(i))
+        else:
+            assert not ISBADCP(i), (i, hex(i))
 
 def random_unicode_string(length=10):
+    assert length >= 0
     got = []
-    while len(got) < length:
-        trial = random.choices(ALLCP, k=length-len(got))
+    while need := length - len(got):
+        assert need > 0
+        trial = random.choices(ALLCP, k=need)
         got.extend(filterfalse(ISBADCP, trial))
+    assert len(got) == length
     return ''.join(map(chr, got))
 
 def random_score_dict(num_candidates=10, max_score=500):
