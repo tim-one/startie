@@ -1,19 +1,28 @@
-import json, random, subprocess, sys, unicodedata
+import json, random, subprocess, sys
+from itertools import filterfalse
 from permute import permute  # Python implementation
 
-printable_chars = tuple(
-    filter(
-        lambda ch: ch.isprintable()
-                   and not unicodedata.category(ch).startswith('C'),
-        map(chr, range(0x110000))
-    )
-)
-print("universe has",
-      format(len(printable_chars), "_"),
-      "code points")
+FORBIDDEN_CODEPOINTS = (
+      # surrogates
+      set(range(0xD800, 0xDFFF + 1))
+      # non-characters
+    | set(range(0xFDD0, 0xFDEF + 1))
+      # non-characters at the end of each plane
+    | set(hi | lo
+          for hi in range(0x000000, 0x10FFFF + 1, 0x10000)
+          for lo in (0xFFFE, 0xFFFF)))
+
+print(format(len(FORBIDDEN_CODEPOINTS), '_'),
+      "forbidden code points")
+ALLCP = range(0x110000)
+ISBADCP = FORBIDDEN_CODEPOINTS.__contains__
 
 def random_unicode_string(length=10):
-    return ''.join(random.choices(printable_chars, k=length))
+    got = []
+    while len(got) < length:
+        trial = random.choices(ALLCP, k=length-len(got))
+        got.extend(filterfalse(ISBADCP, trial))
+    return ''.join(map(chr, got))
 
 def random_score_dict(num_candidates=10, max_score=500):
     # Random candidate names from full plausibie Unicode set.
