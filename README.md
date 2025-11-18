@@ -18,7 +18,7 @@ Suffice it to say that all known problems appear to have been worked out, and re
 
 ## API
 
-The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score)`. which takes a dict mapping names (Unicode strings) to scores (ints), and returns a "randomly permuted" list of names (the score dict's keys).
+The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score)`. which takes a dict (Python. or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a "randomly permuted" list of names (the score dict's keys).
 
 ## Other
 
