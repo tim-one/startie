@@ -1,7 +1,7 @@
 # startie
 Robust, cross-language, "random" tiebreaking for STAR elections
 
-The goal here is to provide a way to break ties in STAR elections in a way that's
+The goal here is to provide a way to break ties in STAR elections that's:
 
 - Reproducible across multiple language implementations.
 - Is reasonably fast and memory-frugal (depends on the number of candidates, but not on the number of voters).
