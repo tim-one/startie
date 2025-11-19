@@ -5,7 +5,7 @@ The goal here is to provide a way to break ties in STAR elections that's:
 
 - Reproducible across multiple language implementations.
 - Is reasonably fast and memory-frugal (depends on the number of candidates, but not on the number of voters).
-- Can't be predicted or manipulated, not even by an election administrator.
+- Can't be predicted or manipulated, not even by an election administrator (but see "Limitations" below).
 - Has no external dependencies (e.g., no looking up winning lottery numbers, or stock market statistics, or web-based "randomness beacons", ...).
 
 The idea is to produce a "random" permutation of the candidates. When a tie occurs, pick the candidate whose name appears earliest in that permutation.
@@ -18,6 +18,8 @@ Suffice it to say that all known problems appear to have been worked out, and re
 
 ## API
 
+NOTE: this is still subject to change.
+
 The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score)`. which takes a dict (Python. or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a "randomly permuted" list of names (the score dict's keys).
 
 ## Other
@@ -25,6 +27,16 @@ The primary files are `permute.py` and `permute.js`. Each supplies one function,
 `compare_driver.py` constructs random score dicts and ensures that the Python and Node implementations produce the same permutations. Edit it to change the number of test cases run, the number of candidates, and the maximum candidate score. That's less work for you too than trying to remember command line conventions :wink:.
 
 `chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates.
+
+## Limitations
+
+It's not actually true that nothing can be known about "score dicts" before the election closes. The names are known from the start, and the election admin contols what they are. In a Unicode world, there are many ways to change code points in ways that leave a given name "looking much the same", or even identical, despite that the UTF-8 encodings differ. Crypto hashes do a marvelous job of emulating true randomness, and changing a single bit in one's input changes about half the bits in the output, but they're still 100% deterministic. The outcomes of all "random" ties are determined solely by the final state of the score dict.
+
+So a determined admin could, in theory, use "poke and hope" spelling changes and try all possible score dicts on each, and pick spellings that favor (or disfavor) some candidate(s) the most across all possible ties. This quickly becomes intractable as elections become larger: if there are `B` ballots and `C` candidates, there are $$(5B + 1)^C$$ possible score dicts. For example, even for a tiny 1-winner, 2-candidate election with 2 voters, there are already $$11^2 = 121$$ possible score dicts.
+
+Of course some score dicts are more likely than others, and there are many ways to try to optimize such brute forre hackery, but as `B` and `C` get ever larger so does the difficulty of finding even slightly advantageous spellings. As best anyone knows, there is currently no computationally tractable way "to out-think" what SHA-512 does, so brute force is needed.
+
+No 100% deterministic method can be made wholly immune to this. I would love to incorporate some actual entropy (e.g., fold in 8 bytes from Python's `secrets.token_bytes(8)`), and then not even the admin could influence the outcome in any effective way, short of "stuffing the ballot box" with imaginary voters under whose names they cast their own ballots. I hope to make such a change, but it depends on whether clients are willing to change their UIs to report the magical bytes picked along with the final anonymized ballots, so that their claimed outcomes can be independently reproduced.
 
 ## Q&A
 
