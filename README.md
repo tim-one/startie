@@ -1,6 +1,8 @@
 # startie
 Robust, cross-language, "random" tiebreaking for STAR elections
 
+**WORK IN PROGRESS - UNSTABLE**
+
 The goal here is to provide a way to break ties in STAR elections that's:
 
 - Reproducible across multiple language implementations.
@@ -18,9 +20,31 @@ Suffice it to say that all known problems appear to have been worked out, and re
 
 ## API
 
-NOTE: this is still subject to change.
+The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score, magic=)`. which takes a dict (Python. or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a "randomly permuted" list of names (the score dict's keys). `magic` is an optional bytes object intended to fold in external "genuine entropy", such as from Python's `secrets.token_bytes(8}` or Node's `crypto.randomBytes(8)`.
 
-The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score)`. which takes a dict (Python. or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a "randomly permuted" list of names (the score dict's keys).
+#### Python
+
+```python
+def permute(score: dict[str, int],
+            magic: bytes=b'') -> list[str]:
+```
+
+#### Node.js
+
+```js
+const EMPTY_BUFFER = Buffer.alloc(0);
+
+function permute(score, magic=EMPTY_BUFFER) {
+```
+
+- `score` is an `Object` with string properties and int values.
+- `magic` is a Node `Buffer` of little ints, a subclass of `Uint8Array`.
+
+#### All implementations
+
+Using `magic` is **highly** encouraged. Without it, there are known insecurities, as explained in "Limitations" below. While they appear to be at worst minor in elections of non-trivial size, better safe than sorry. An 8-byte "really random" `magic` expands the search space for all known attacks by a factor of $$2^{64}$$
+
+Note that `permute()` is intended to be called exactly once per election, after the election is closed, to prepare for possible ties in the scoring phase. The code is written for clarity & simplicity rather than speed, but it's so fast you won't notice anyway. Time and RAM use scale with the number of candidates, which is never "large". The number of ballots is irrelevant
 
 ## Other
 
@@ -36,7 +60,7 @@ So a determined admin could, in theory, use "poke and hope" spelling changes and
 
 Of course some score dicts are more likely than others, and there are many ways to try to optimize such brute forre hackery, but as `B` and `C` get ever larger so does the difficulty of finding even slightly advantageous spellings. As best anyone knows, there is currently no computationally tractable way "to out-think" what SHA-512 does, so brute force is needed.
 
-No 100% deterministic method can be made wholly immune to this. I would love to incorporate some actual entropy (e.g., fold in 8 bytes from Python's `secrets.token_bytes(8)`), and then not even the admin could influence the outcome in any effective way, short of "stuffing the ballot box" with imaginary voters under whose names they cast their own ballots. I hope to make such a change, but it depends on whether clients are willing to change their UIs to report the magical bytes picked along with the final anonymized ballots, so that their claimed outcomes can be independently reproduced.
+No 100% deterministic method can be made wholly immune to this. I would love to incorporate some actual entropy (e.g., fold in 8 bytes from Python's `secrets.token_bytes(8)`), and then not even the admin could influence the outcome in any effective way, short of "stuffing the ballot box" with imaginary voters under whose names they cast their own ballots. I hope to make such a change, but it depends on whether clients are willing to change their UIs to report the magical bytes picked along with the final anonymized ballots, so that their claimed outcomes can be independently reproduced. Later: and I made that change. The API now supports an optional `magic` argument to incorporate genuine entropy. Its use is highly encouraged, but if it's ignored the results are the same as before.
 
 ## Q&A
 
