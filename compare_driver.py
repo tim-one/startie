@@ -46,7 +46,7 @@ def run_node(score, magic):
                 'score': score,
                }
         proc = subprocess.run(
-            ["node", "permute_test.js"],
+            ["node", "permute_stdinout.js"],
             input=json.dumps(args).encode(),
             capture_output=True,
             check=True,
