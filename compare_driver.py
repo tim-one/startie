@@ -1,4 +1,5 @@
-import json, random, subprocess, sys, secrets
+from run_node import node_permute
+import random, sys, secrets
 from itertools import filterfalse
 from permute import permute  # Python implementation
 
@@ -39,35 +40,13 @@ def random_score_dict(num_candidates=10, max_score=500):
     return {f"C{i}": random.randint(0, max_score)
             for i in range(num_candidates)}
 
-def run_node(score, magic):
-    # Launch Node.js and feed JSON dict via stdin
-    try:
-        args = {'magic': list(magic),
-                'score': score,
-               }
-        proc = subprocess.run(
-            ["node", "permute_stdinout.js"],
-            input=json.dumps(args).encode(),
-            capture_output=True,
-            check=True,
-        )
-    except Exception as e:
-        print(e)
-        print(dir(e))
-        print(e.args)
-        print(e.cmd)
-        print(e.output)
-        print(e.stderr)
-        raise
-    return json.loads(proc.stdout)
-
 def main(output=None):
     trials = 1000
     for t in range(trials):
         magic = secrets.token_bytes(8)
         score = random_score_dict(num_candidates=12, max_score=5000)
         py_perm = permute(score, magic)
-        node_perm = run_node(score, magic)
+        node_perm = node_permute(score, magic)
         if py_perm != node_perm:
             print("? Mismatch on trial", t)
             print("Score dict:", score)

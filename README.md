@@ -72,6 +72,8 @@ Note that `permute()` is intended to be called exactly once per election, after 
 
 `chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates.
 
+`run_node.py` supplies function `node_permute()`, with the same signature as the Python `permute()`, but invokes the Node version to return the result computed by the latter. Mostly for testing.
+
 ## Limitations
 
 It's not actually true that nothing can be known about "score dicts" before the election closes. The names are known from the start, and the election admin contols what they are. In a Unicode world, there are many ways to change code points in ways that leave a given name "looking much the same", or even identical, despite that the UTF-8 encodings differ. Crypto hashes do a marvelous job of emulating true randomness, and changing a single bit in one's input changes about half the bits in the output, but they're still 100% deterministic. The outcomes of all "random" ties are determined solely by the final state of the score dict.
