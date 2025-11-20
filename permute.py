@@ -41,6 +41,95 @@
 # representations. That will produce the same stream of bytes on all
 # platforms.
 
+"""
+permute(score, magic=b'') returns a deterministic pseudo-random
+permutation of the keys of the score dict, reproducible "forever"
+and across multiple languages.
+
+>>> cands = 'ABCDE'
+>>> score = dict(zip(cands, range(len(cands))))
+>>> score
+{'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4}
+>>> squash = lambda iterable: ''.join(iterable)
+>>> squash(score)
+'ABCDE'
+>>> expected = permute(score)
+>>> squash(expected)
+'DCAEB'
+
+The order of dict entries doesn't matter. Internally, the entries
+are processed by lexicographic order of the keys' UTF-8 encoding.
+
+>>> from itertools import permutations
+>>> count = 0
+>>> items = list(score.items())
+>>> for newitems in permutations(items):
+...     count += 1
+...     newscore = dict(newitems)
+...     got = permute(newscore)
+...     assert got == expected
+>>> count
+120
+
+The JavaScript implementation gives the same results.
+
+>>> try:
+...     from run_node import node_permute
+... except ModuleNotFoundError:
+...     node_permute = permute
+>>> got = node_permute(score)
+>>> squash(got)
+'DCAEB'
+>>> assert got == expected
+
+Any change to the socre dict can change the permutation.
+
+>>> for name in score:
+...     orig = score[name]
+...     score[name] += 1
+...     print(squash(permute(score)))
+...     score[name] = orig
+DCBAE
+ADBEC
+CBAED
+ECBDA
+ADCBE
+>>> assert permute(score) == expected
+
+The optional "magic" argument can be used to inject some true
+randomness. For example, pass `secrets.token_bytes(8))`. It's highly
+recommended. Any bytes object can be used, provided it can't be guessed,
+and every bit can make a difference. 8 bytes offers strong protection
+against manipulation with scant overhead.
+
+>>> seen = set()
+>>> for magicint in range(10):
+...    magicbytes = magicint.to_bytes(8, 'little')
+...    got = squash(permute(score, magicbytes))
+...    print(magicint, got)
+...    seen.add(got)
+...    gotjs = squash(node_permute(score, magicbytes))
+...    assert got == gotjs
+0 ECDAB
+1 AEDBC
+2 DBCEA
+3 DECAB
+4 CABED
+5 ADBCE
+6 DCBAE
+7 BDACE
+8 AEBDC
+9 DECBA
+>>> len(seen)
+10
+
+The default is the empty byte string.
+>>> got = permute(score, b'')
+>>> squash(got)
+'DCAEB'
+>>> assert got == expected
+"""
+
 import hashlib
 
 __all__ = ["permute"]
@@ -76,7 +165,7 @@ def _canonical_salt(score: dict[str, int],
     return h
 
 def _make_key(cand: str,
-              score: dict[str, int],
+             score: dict[str, int],
               salt: hashlib._Hash) -> bytes:
     h = salt.copy()
     h.update(cand.encode("utf-8") + _int2bytes(score[cand]))
@@ -93,3 +182,8 @@ def permute(score: dict[str, int],
 # print(permute(score))
 
 assert _canonical_salt({}).hexdigest() == hashlib.sha512(VERSION).hexdigest()
+
+if __name__ == "__main__":
+    import doctest
+    outcome = doctest.testmod()
+    print("doctest result:", outcome)
