@@ -1,5 +1,7 @@
 import json, subprocess
 
+__all__ = ["node_permute"]
+
 # node_permute() runs the Node implementation using Node
 def node_permute(score: dict[str, int],
                  magic: bytes=b'') -> list[str]:
