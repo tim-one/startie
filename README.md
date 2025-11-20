@@ -29,6 +29,12 @@ def permute(score: dict[str, int],
             magic: bytes=b'') -> list[str]:
 ```
 
+```python
+$ py -i permute.py
+>>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
+['C', 'A', 'B', 'D']
+```
+
 #### Node.js
 
 ```js
@@ -39,6 +45,16 @@ function permute(score, magic=EMPTY_BUFFER) {
 
 - `score` is an `Object` with string properties and int values.
 - `magic` is a Node `Buffer` of little ints, a subclass of `Uint8Array`.
+
+```js
+$ node
+Welcome to Node.js v24.11.1.
+Type ".help" for more information.
+> {permute} = require("./permute")
+{ permute: [Function: permute] }
+> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
+[ 'C', 'A', 'B', 'D' ]
+```
 
 #### All implementations
 
