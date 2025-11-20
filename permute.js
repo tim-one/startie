@@ -12,11 +12,13 @@ function int2bytes(n) {
   return Buffer.from(bytes);
 }
 
-function canonicalSalt(score) {
+function canonicalSalt(score, magic) {
   const items = Object.entries(score)
-    .sort((a, b) => Buffer.from(a[0], 'utf8').compare(Buffer.from(b[0], 'utf8')));
+    .sort((a, b) => Buffer.from(a[0], 'utf8').compare(
+                    Buffer.from(b[0], 'utf8')));
   const stream = [];
-  stream.push(...Buffer.from("STAR-TIE-512-v1", 'utf8'));
+  stream.push(...Buffer.from("STAR-TIE-512-v1", 'utf8'),
+              ...magic);
   for (const [name, stars] of items) {
     const nameBytes = Buffer.from(name, 'utf8');
     stream.push(...nameBytes, ...int2bytes(stars));
@@ -32,9 +34,13 @@ function makeKey(cand, score, salt) {
   return h.digest();
 }
 
-function permute(score) {
-  const salt = canonicalSalt(score);
-  return Object.keys(score).sort((a, b) => makeKey(a, score, salt).compare(makeKey(b, score, salt)));
+const EMPTY_BUFFER = Buffer.alloc(0);
+
+function permute(score, magic=EMPTY_BUFFER) {
+  const salt = canonicalSalt(score, magic);
+  return Object.keys(score).sort(
+      (a, b) => makeKey(a, score, salt).compare(
+                makeKey(b, score, salt)));
 }
 
 module.exports = {"permute" : permute}

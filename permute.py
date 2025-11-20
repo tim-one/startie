@@ -64,8 +64,9 @@ def _int2bytes(n: int) -> bytearray:
     out.append(0)
     return out
 
-def _canonical_salt(score: dict[str, int]) -> hashlib._Hash:
-    h = hashlib.sha512(VERSION)
+def _canonical_salt(score: dict[str, int],
+                    magic: bytes=b'') -> hashlib._Hash:
+    h = hashlib.sha512(VERSION + magic)
     # Sort candidate names by raw UTF-8 bytes
     items = [(name.encode("utf-8"), s)
              for name, s in score.items()]
@@ -81,8 +82,9 @@ def _make_key(cand: str,
     h.update(cand.encode("utf-8") + _int2bytes(score[cand]))
     return h.digest()
 
-def permute(score: dict[str, int]) -> list[str]:
-    salt = _canonical_salt(score)
+def permute(score: dict[str, int],
+            magic: bytes=b'') -> list[str]:
+    salt = _canonical_salt(score, magic)
     return sorted(score.keys(),
                   key=lambda c: _make_key(c, score, salt))
 
