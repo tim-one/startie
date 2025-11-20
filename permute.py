@@ -1,4 +1,3 @@
-
 """
 permute(score, magic=b'') returns a deterministic pseudo-random
 permutation of the keys of the score dict, reproducible "forever"
