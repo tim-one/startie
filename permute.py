@@ -45,14 +45,21 @@ Any change to the socre dict can change the permutation.
 
 >>> for name in score:
 ...     orig = score[name]
-...     score[name] += 1
+...     score[name] = orig + 1
 ...     print(squash(permute(score)))
+...     if orig: # can't have a negative "score"
+...         score[name] = orig - 1
+...         print(squash(permute(score)))
 ...     score[name] = orig
 DCBAE
 ADBEC
+BCEDA
 CBAED
+ADEBC
 ECBDA
+BAEDC
 ADCBE
+EBDAC
 >>> assert permute(score) == expected
 
 The optional "magic" argument can be used to inject some true
