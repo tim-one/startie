@@ -33,6 +33,8 @@ def permute(score: dict[str, int],
 $ py -i permute.py
 >>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
 ['C', 'A', 'B', 'D']
+>>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, bytes([42]))
+['A', 'D', 'B', 'C']
 ```
 
 #### Node.js
@@ -54,6 +56,8 @@ Type ".help" for more information.
 { permute: [Function: permute] }
 > permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
 [ 'C', 'A', 'B', 'D' ]
+> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, Buffer.from([42]))
+[ 'A', 'D', 'B', 'C' ]
 ```
 
 #### All implementations
