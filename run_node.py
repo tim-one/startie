@@ -1,13 +1,13 @@
 import json, subprocess
 
-# node_permute runs the Node implementation using Node
+# node_permute() runs the Node implementation using Node
 def node_permute(score: dict[str, int],
                  magic: bytes=b'') -> list[str]:
 
     args = {'magic': list(magic),
             'score': score,
-               }
-    # Launch Node.js and feed JSON dict via stdin
+           }
+   # Launch Node.js and feed JSON dict via stdin
     try:
         proc = subprocess.run(
             ["node", "permute_stdinout.js"],
