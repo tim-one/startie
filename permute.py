@@ -3,6 +3,8 @@ permute(score, magic=b'') returns a deterministic pseudo-random
 permutation of the keys of the score dict, reproducible "forever"
 and across multiple languages.
 
+>>> VERSION # if this changes, test output will change too
+b'STAR-TIE-512-v1'
 >>> cands = 'ABCDE'
 >>> score = dict(zip(cands, range(len(cands))))
 >>> score
