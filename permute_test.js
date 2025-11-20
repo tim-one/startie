@@ -3,10 +3,10 @@ const permute = require('./permute.js');
 
 // Read JSON dict from stdin
 const input = fs.readFileSync(0, 'utf8');
-const score = JSON.parse(input);
+const args = JSON.parse(input);
 
 // Compute permutation
-const result = permute.permute(score);
+const result = permute.permute(args.score, Buffer.from(args.magic));
 
 // Write result back to stdout as JSON
 process.stdout.write(JSON.stringify(result));
