@@ -152,21 +152,18 @@ VERSION = b"STAR-TIE-512-v1"
 # UTF-8 bytes when catenating fields (UTF-8 never contains a zero byte
 # unless it's a single-character 0 byte, which won't appear in candidate
 # names).
-def _int2bytes(n: int) -> bytearray:
+def _int2bytes(n: int) -> bytea:
     if n < 0:
         raise ValueError("n must be nonnegative")
-    out = bytearray([0])
-    while n:
-        out.append(n & 0xff)
-        n >>= 8
-    out.append(0)
-    return out
+    return (  b'\x00'
+            + n.to_bytes(-(n.bit_length() // -8), 'little')
+            + b'\x00')
 
 def _canonical_salt(score: dict[str, int],
                     magic: bytes=b'') -> hashlib._Hash:
     h = hashlib.sha512(VERSION + magic)
     # Sort candidate names by raw UTF-8 bytes
-    items = [(name.encode("utf-8"), s)
+    items = [(name.encode(), s)
              for name, s in score.items()]
     items.sort()
     for name_bytes, stars in items:
@@ -177,7 +174,7 @@ def _make_key(cand: str,
              score: dict[str, int],
               salt: hashlib._Hash) -> bytes:
     h = salt.copy()
-    h.update(cand.encode("utf-8") + _int2bytes(score[cand]))
+    h.update(cand.encode() + _int2bytes(score[cand]))
     return h.digest()
 
 def permute(score: dict[str, int],
