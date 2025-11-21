@@ -6,6 +6,9 @@ __all__ = ["node_permute"]
 def node_permute(score: dict[str, int],
                  magic: bytes=b'') -> list[str]:
 
+    # JSON doesn't understand bytes, but a small list of little ints
+    # works fine. Buffer.from() works on the other end to create Node's
+    # seemingly closest workalike to bytes.
     args = {'magic': list(magic),
             'score': score,
            }
