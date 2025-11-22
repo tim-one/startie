@@ -3,9 +3,9 @@ Robust, cross-language, "random" tiebreaking for STAR elections
 
 **WORK IN PROGRESS - UNSTABLE**
 
-The goal here is to provide a way to break ties in STAR elections that's:
+The goal here is to provide a way to break ties in STAR elections that:
 
-- Reproducible across multiple language implementations.
+- Is reproducible across multiple language implementations.
 - Is reasonably fast and memory-frugal (depends on the number of candidates, but not on the number of voters).
 - Can't be predicted or manipulated, not even by an election administrator (but see "Limitations" below).
 - Has no external dependencies (e.g., no looking up winning lottery numbers, or stock market statistics, or web-based "randomness beacons", ...).
