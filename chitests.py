@@ -18,7 +18,7 @@
 from collections import defaultdict
 from math import factorial, sqrt, nan
 import string
-from random import choices
+from random import choices, choice
 from permute import permute
 
 from mpmath import gammainc, ncdf
@@ -42,18 +42,27 @@ def check(NCANDS, HILIMIT=500):
     # abolutw minimun for chi-square testa to be reliable.
     expect = 6.0
     total = int(expect) * nbins
+    batch = 2**7
+    total += -total % batch
+    assert not total % batch
+    expect = total / nbins
     counts = defaultdict(int)
+    ndone = 0
     print("num cands", NCANDS, "high score limit", HILIMIT,
           "nbins", format(nbins, '_'),
-          "expected per bin", expect)
-    for i in range(1, total + 1):
+          "expected per bin", round(expect, 3))
+    for i in range(total // batch):
         score = dict(zip(cands, choices(scorerange, k=NCANDS)))
-        # Due to our choice of candidate names, a permutation can be
-        # uniquely and compactly represented as a base-NCANDS integer
-        # with NCANDS digits. Saves RAM over using string keys.
-        counts[int(''.join(permute(score)), NCANDS)] += 1
-        if not i & 0xffff:
-            print(format(i / total, '.2%'), end="\r")
+        for j in range(batch):
+            score[choice(cands)] += 1 # minimal change
+            # Due to our choice of candidate names, a permutation can be
+            # uniquely and compactly represented as a base-NCANDS
+            # integer with NCANDS digits. Saves RAM over using string
+            # keys, and cycles over making the dict compare string keys.
+            counts[int(''.join(permute(score)), NCANDS)] += 1
+        ndone += batch
+        if not ndone & 0xffff:
+            print(format(ndone / total, '.2%'), end="\r")
     print(' ' * 50, end="\r")
     missing = nbins - len(counts)
     assert missing >= 0
