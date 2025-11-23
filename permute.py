@@ -14,7 +14,7 @@ b'STAR-TIE-512-v1'
 'ABCDE'
 >>> expected = permute(score)
 >>> squash(expected)
-'CABED'
+'BEACD'
 
 The order of dict entries doesn't matter. Internally, the entries
 are processed by lexicographic order of the keys' UTF-8 encoding.
@@ -38,7 +38,7 @@ The JavaScript implementation gives the same results.
 ...     node_permute = permute
 >>> got = node_permute(score)
 >>> squash(got)
-'CABED'
+'BEACD'
 >>> assert got == expected
 
 Any change to the socre dict can change the permutation.
@@ -51,15 +51,15 @@ Any change to the socre dict can change the permutation.
 ...         score[name] = orig - 1
 ...         print(squash(permute(score)))
 ...     score[name] = orig
-DCEAB
-EBDAC
-BACDE
-BDEAC
-CEABD
-BEACD
-ACDEB
-BAEDC
-ADBCE
+DECAB
+DCABE
+ACBED
+EABCD
+CBDAE
+BDACE
+BDACE
+ABDCE
+BEDCA
 >>> assert permute(score) == expected
 
 The optional "magic" argument can be used to inject some true
@@ -76,23 +76,23 @@ against manipulation with scant overhead.
 ...    seen.add(got)
 ...    gotjs = squash(node_permute(score, magicbytes))
 ...    assert got == gotjs
-0 DACBE
-1 EDCBA
-2 EBACD
-3 ECADB
-4 ADCBE
-5 DABEC
-6 BDEAC
-7 DCABE
-8 ACEBD
-9 DBCEA
+0 ABCDE
+1 BACED
+2 CDBEA
+3 EBCDA
+4 AEDCB
+5 BADEC
+6 DCAEB
+7 DEACB
+8 DCBAE
+9 DEABC
 >>> len(seen)
 10
 
 The default is the empty byte string.
 >>> got = permute(score, b'')
 >>> squash(got)
-'CABED'
+'BEACD'
 >>> assert got == expected
 """
 
@@ -139,6 +139,14 @@ The default is the empty byte string.
 # representations. That will produce the same stream of bytes on all
 # platforms.
 
+# Later: after more thought, folding thn names into the salt didn't
+# really help. It's the scores alone that vary across an election's
+# score dicts. So we only need to fold in the scores in a canonicalized
+# order of names.
+
+# And then there's no need to fold the score into the hash of a
+# candidate's name. The scores are already in the salt.
+
 import hashlib
 import operator
 
@@ -163,27 +171,27 @@ def _int2bytes(n: int) -> bytea:
 def _canonical_salt(score: dict[str, int],
                     magic: bytes=b'') -> hashlib._Hash:
     h = hashlib.sha512(VERSION + magic)
-    # Sort candidate names by raw UTF-8 bytes
+    # Sort candidate names by raw UTF-8 bytes.
     items = [(name.encode(), s)
              for name, s in score.items()]
     items.sort()
+    # Hash the scorea in order of UTF-8.
     h.update(b''.join(map(_int2bytes,
                           map(operator.itemgetter(1),
                               items))))
     return h
 
 def _make_key(cand: str,
-             score: dict[str, int],
               salt: hashlib._Hash) -> bytes:
     h = salt.copy()
-    h.update(cand.encode() + _int2bytes(score[cand]))
+    h.update(cand.encode())
     return h.digest()
 
 def permute(score: dict[str, int],
             magic: bytes=b'') -> list[str]:
     salt = _canonical_salt(score, magic)
     return sorted(score.keys(),
-                  key=lambda c: _make_key(c, score, salt))
+                  key=lambda c: _make_key(c, salt))
 
 # Example
 # score = {"Alice": 5, "Bob": 3, "Charlie": 7}

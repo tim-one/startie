@@ -25,34 +25,34 @@ Capture some actual outputs to make sure results remain the same.
 ...     assert py_result == js_result
 score {'D': 44, 'H': 43, 'V': 73, 'K': 47, 'G': 47, 'R': 7}
 magic 0x6534defa3e6bdf69
-['V', 'K', 'H', 'R', 'D', 'G'] True
+['V', 'H', 'D', 'G', 'K', 'R'] True
 score {'A': 28, 'H': 15, 'F': 27, 'V': 54}
 magic 0x00c30bfae3baab68
-['H', 'V', 'F', 'A'] True
+['A', 'H', 'F', 'V'] True
 score {'X': 76, 'D': 32, 'H': 4, 'E': 85, 'G': 59, 'L': 96, 'J': 22, 'N': 38, 'C': 43, 'T': 69}
 magic 0xb1fb8ce49ee5e1db
-['L', 'G', 'C', 'T', 'N', 'X', 'J', 'D', 'E', 'H'] True
+['N', 'G', 'D', 'T', 'X', 'H', 'C', 'L', 'J', 'E'] True
 score {'S': 14, 'T': 81, 'C': 91, 'O': 74, 'Q': 2}
 magic 0xd13223588fda6ca4
-['S', 'O', 'Q', 'T', 'C'] True
+['S', 'O', 'Q', 'C', 'T'] True
 score {'M': 26, 'Y': 44, 'W': 18}
 magic 0x27adc9eb95fa0627
-['W', 'Y', 'M'] True
+['M', 'Y', 'W'] True
 score {'Z': 57, 'L': 61, 'D': 80, 'C': 30, 'M': 95, 'T': 78, 'V': 38, 'G': 57, 'Q': 47, 'K': 38}
 magic 0x3d7beac4badba914
-['G', 'C', 'K', 'M', 'Z', 'V', 'L', 'T', 'Q', 'D'] True
+['Z', 'T', 'K', 'D', 'G', 'C', 'Q', 'V', 'M', 'L'] True
 score {'D': 33, 'Q': 91, 'K': 28, 'Y': 70, 'O': 21, 'B': 60}
 magic 0xd0eae35067feb7be
-['O', 'B', 'K', 'Q', 'D', 'Y'] True
+['Q', 'O', 'D', 'B', 'Y', 'K'] True
 score {'F': 36, 'G': 52}
 magic 0x4ecc14afce878d1c
-['F', 'G'] True
+['G', 'F'] True
 score {'Y': 76, 'P': 45, 'O': 8, 'M': 63, 'W': 97, 'V': 87}
 magic 0xe264c8c0a070662a
-['O', 'P', 'W', 'V', 'M', 'Y'] True
+['W', 'Y', 'O', 'V', 'M', 'P'] True
 score {'L': 32, 'M': 61, 'N': 84, 'U': 93, 'S': 34}
 magic 0x4afb51805314e9f9
-['N', 'M', 'L', 'S', 'U'] True
+['M', 'S', 'U', 'N', 'L'] True
 """
 }
 

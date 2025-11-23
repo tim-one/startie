@@ -24,11 +24,10 @@ function canonicalSalt(score, magic) {
   return Buffer.concat(buffers);
 }
 
-function makeKey(cand, score, salt) {
+function makeKey(cand, salt) {
   const h = crypto.createHash('sha512');
   h.update(salt);
   h.update(Buffer.from(cand, 'utf8'));
-  h.update(int2bytes(score[cand]));
   return h.digest();
 }
 
@@ -40,7 +39,7 @@ function permute(score, magic=EMPTY_BUFFER) {
   // Use DSU pattern to sort names by the cryto-hash sort keys.
   const decorated = candidates.map(name => ({
     name: name,
-    key: makeKey(name, score, salt)
+    key: makeKey(name, salt)
   }));
   decorated.sort((a, b) => a.key.compare(b.key));
   return decorated.map(item => item.name);

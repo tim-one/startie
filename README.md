@@ -32,9 +32,9 @@ def permute(score: dict[str, int],
 ```python
 $ py -i permute.py
 >>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-['B', 'C', 'A', 'D']
+['B', 'D', 'C', 'A']
 >>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, bytes([42]))
-['C', 'D', 'A', 'B']
+['D', 'A', 'B', 'C']
 ```
 
 #### Node.js
@@ -55,9 +55,10 @@ Type ".help" for more information.
 > {permute} = require("./permute")
 { permute: [Function: permute] }
 > permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-[ 'B', 'C', 'A', 'D' ]
+[ 'B', 'D', 'C', 'A' ]
 > permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, Buffer.from([42]))
-[ 'C', 'D', 'A', 'B' ]
+[ 'D', 'A', 'B', 'C' ]
+
 ```
 
 #### All implementations
