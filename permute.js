@@ -16,14 +16,14 @@ function canonicalSalt(score, magic) {
   const items = Object.entries(score)
     .sort((a, b) => Buffer.from(a[0], 'utf8').compare(
                     Buffer.from(b[0], 'utf8')));
-  const stream = [];
-  stream.push(...Buffer.from("STAR-TIE-512-v1", 'utf8'),
-              ...magic);
+  const buffers = [];
+  buffers.push(Buffer.from("STAR-TIE-512-v1", 'utf8'))
+  buffers.push(magic);
   for (const [name, stars] of items) {
-    const nameBytes = Buffer.from(name, 'utf8');
-    stream.push(...nameBytes, ...int2bytes(stars));
+    buffers.push(Buffer.from(name, 'utf8'));
+    buffers.push(int2bytes(stars));
   }
-  return Buffer.from(stream);
+  return Buffer.concat(buffers);
 }
 
 function makeKey(cand, score, salt) {
