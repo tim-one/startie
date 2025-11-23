@@ -105,6 +105,14 @@ No 100% deterministic method can be made wholly immune to this. I would love to 
 
 Other _potential_ problems could come from "normalization", fancy schemes that actually change code points. We certainly do none of that, and I doubt any voting service would either. They're just using Unicode to display candidate names faithfully, not analyzing them or doing computation on them.
 
+**Q:** What happens if two sort keys are the same?
+
+**A:** Won't happen. Note that two names' UTF-8 encodings can't be the same in this context. It's an election, and if ballots displayed two names the same way, voters couldn't distinguish between them. So all names display uniquely. That implies that their UTF-8 encodigs must also be pairwise distinct ("different displays" implies "different sequence of Unicode code points" implies "different encodings").
+
+So it remains that their crypto hashes may nevertheless be the same. That's phenomenally unlikely. Collison resistance is a primary design goal of crypto hashes, and to date there is no publicly known case of two distinct inputs of _any_ kind whose hashes collide. That's not for lack of trying.
+
+If it happens anyway, the tiebreaking may or may match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, and dicts preserve insertion order, so at least the results will be reproducible across runs of the Python implementation. I don't know about `Node.js` details. But, "won't happen", so don't worry about it :smile:.
+
 ## Acks
 
 - Thanks to Larry Hastings, for talks about this kind of approach when he was writing his lovely [starvote](https://github.com/larryhastings/starvote) library. The idea here is similar, but less ambitious, simpler, and much less tied to Python quirks. Larry uses a crypto hash to seed Python's Mersenne Twister; we don't use a conventional PRNG at all. Larry goes on to build a crypto hash of all the ballots, but we only look at the score dict. That's partly for efficiency, but also looking forward to a future when STAR is the only voting method in use 😄. Then "precinct summability" becomes important - there may not be a "collection of ballots" in one place _to_ look at, just a sum of score dicts aggregated from different precincts.
