@@ -111,7 +111,7 @@ Other _potential_ problems could come from "normalization", fancy schemes that a
 
 So it remains that their crypto hashes may nevertheless be the same. That's phenomenally unlikely. Collison resistance is a primary design goal of crypto hashes, and to date there is no publicly known case of two distinct inputs of _any_ kind whose hashes collide. That's not for lack of trying.
 
-If it happens anyway, the tiebreaking may or may match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, and dicts preserve insertion order, so at least the results will be reproducible across runs of the Python implementation. I don't know about `Node.js` details. But, "won't happen", so don't worry about it :smile:.
+If it happens anyway, the tiebreaking may or may not match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, and dicts preserve insertion order, so at least the results will be reproducible across runs of the Python implementation. I don't know about `Node.js` details. But, "won't happen", so don't worry about it :smile:.
 
 ## Acks
 
