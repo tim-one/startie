@@ -37,9 +37,14 @@ const EMPTY_BUFFER = Buffer.alloc(0);
 
 function permute(score, magic=EMPTY_BUFFER) {
   const salt = canonicalSalt(score, magic);
-  return Object.keys(score).sort(
-      (a, b) => makeKey(a, score, salt).compare(
-                makeKey(b, score, salt)));
+  const candidates = Object.keys(score);
+  // Use DSU pattern to sort names by the cryto-hash sort keys.
+  const decorated = candidates.map(name => ({
+    name: name,
+    key: makeKey(name, score, salt)
+  }));
+  decorated.sort((a, b) => a.key.compare(b.key));
+  return decorated.map(item => item.name);
 }
 
 module.exports = {"permute" : permute}
