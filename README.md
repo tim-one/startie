@@ -30,11 +30,13 @@ def permute(score: dict[str, int],
 ```
 
 ```python
-$ py -i permute.py
+$ py
+>>> from permute import permute
 >>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
 ['B', 'D', 'C', 'A']
 >>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, bytes([42]))
 ['D', 'A', 'B', 'C']
+
 ```
 
 #### Node.js
@@ -74,6 +76,8 @@ Note that `permute()` is intended to be called exactly once per election, after 
 `chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates. Run Python with "-u" so the progress display updates properly in a terminal window (prints progress output ending with a carriage return to overwrite the displayed line).
 
 `run_node.py` supplies function `node_permute()`, with the same signature as the Python `permute()`, but invokes the Node version to return the result computed by the latter. Mostly for testing.
+
+`check_readme.py` verifies the doctests in _this_ file work. Very easy to miss otherwise.
 
 ## Limitations
 
