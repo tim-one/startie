@@ -14,7 +14,7 @@ b'STAR-TIE-512-v1'
 'ABCDE'
 >>> expected = permute(score)
 >>> squash(expected)
-'DCAEB'
+'CABED'
 
 The order of dict entries doesn't matter. Internally, the entries
 are processed by lexicographic order of the keys' UTF-8 encoding.
@@ -38,7 +38,7 @@ The JavaScript implementation gives the same results.
 ...     node_permute = permute
 >>> got = node_permute(score)
 >>> squash(got)
-'DCAEB'
+'CABED'
 >>> assert got == expected
 
 Any change to the socre dict can change the permutation.
@@ -51,15 +51,15 @@ Any change to the socre dict can change the permutation.
 ...         score[name] = orig - 1
 ...         print(squash(permute(score)))
 ...     score[name] = orig
-DCBAE
-ADBEC
-BCEDA
-CBAED
-ADEBC
-ECBDA
-BAEDC
-ADCBE
+DCEAB
 EBDAC
+BACDE
+BDEAC
+CEABD
+BEACD
+ACDEB
+BAEDC
+ADBCE
 >>> assert permute(score) == expected
 
 The optional "magic" argument can be used to inject some true
@@ -76,23 +76,23 @@ against manipulation with scant overhead.
 ...    seen.add(got)
 ...    gotjs = squash(node_permute(score, magicbytes))
 ...    assert got == gotjs
-0 ECDAB
-1 AEDBC
-2 DBCEA
-3 DECAB
-4 CABED
-5 ADBCE
-6 DCBAE
-7 BDACE
-8 AEBDC
-9 DECBA
+0 DACBE
+1 EDCBA
+2 EBACD
+3 ECADB
+4 ADCBE
+5 DABEC
+6 BDEAC
+7 DCABE
+8 ACEBD
+9 DBCEA
 >>> len(seen)
 10
 
 The default is the empty byte string.
 >>> got = permute(score, b'')
 >>> squash(got)
-'DCAEB'
+'CABED'
 >>> assert got == expected
 """
 
@@ -140,6 +140,7 @@ The default is the empty byte string.
 # platforms.
 
 import hashlib
+import operator
 
 __all__ = ["permute"]
 
@@ -166,8 +167,9 @@ def _canonical_salt(score: dict[str, int],
     items = [(name.encode(), s)
              for name, s in score.items()]
     items.sort()
-    for name_bytes, stars in items:
-        h.update(name_bytes + _int2bytes(stars))
+    h.update(b''.join(map(_int2bytes,
+                          map(operator.itemgetter(1),
+                              items))))
     return h
 
 def _make_key(cand: str,

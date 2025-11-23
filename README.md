@@ -32,9 +32,9 @@ def permute(score: dict[str, int],
 ```python
 $ py -i permute.py
 >>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-['C', 'A', 'B', 'D']
+['B', 'C', 'A', 'D']
 >>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, bytes([42]))
-['A', 'D', 'B', 'C']
+['C', 'D', 'A', 'B']
 ```
 
 #### Node.js
@@ -55,9 +55,9 @@ Type ".help" for more information.
 > {permute} = require("./permute")
 { permute: [Function: permute] }
 > permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-[ 'C', 'A', 'B', 'D' ]
+[ 'B', 'C', 'A', 'D' ]
 > permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, Buffer.from([42]))
-[ 'A', 'D', 'B', 'C' ]
+[ 'C', 'D', 'A', 'B' ]
 ```
 
 #### All implementations
@@ -107,5 +107,3 @@ Other _potential_ problems could come from "normalization", fancy schemes that a
 - Thanks to the folks at the [STAR voting service](https://bettervoting.com/). for discussions, interest, encouragement, and contributing code to an earlier attempt at writing a cross-language "good enough" pseudo-random list shuffler. I've given up on that, as finding a "provably fair and secure" way to _seed_ it proved to be a bottomless pit. If the STAR folks adopt this new approach, I'll pester Larry to add it as an optional way for `starvote` to break ties too.
 
 - And special thanks to ChatGPT-5! It knows a whole lot more about JavaScript than I know, and most of its suggestions worked on the first try. It also showed shockingly deep insights into the nuances of the problem domain, such as why the central limit theorem played a key role in why an earlier attempt produced demonstrably biased permutations.
-
-

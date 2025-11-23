@@ -19,7 +19,6 @@ function canonicalSalt(score, magic) {
   const buffers = [Buffer.from("STAR-TIE-512-v1", 'utf8')];
   buffers.push(magic);
   for (const [name, stars] of items) {
-    buffers.push(Buffer.from(name, 'utf8'));
     buffers.push(int2bytes(stars));
   }
   return Buffer.concat(buffers);

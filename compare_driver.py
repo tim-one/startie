@@ -25,34 +25,35 @@ Capture some actual outputs to make sure results remain the same.
 ...     assert py_result == js_result
 score {'D': 44, 'H': 43, 'V': 73, 'K': 47, 'G': 47, 'R': 7}
 magic 0x6534defa3e6bdf69
-['G', 'K', 'H', 'V', 'D', 'R'] True
+['V', 'K', 'H', 'R', 'D', 'G'] True
 score {'A': 28, 'H': 15, 'F': 27, 'V': 54}
 magic 0x00c30bfae3baab68
-['V', 'H', 'F', 'A'] True
+['H', 'V', 'F', 'A'] True
 score {'X': 76, 'D': 32, 'H': 4, 'E': 85, 'G': 59, 'L': 96, 'J': 22, 'N': 38, 'C': 43, 'T': 69}
 magic 0xb1fb8ce49ee5e1db
-['X', 'T', 'C', 'J', 'H', 'D', 'L', 'G', 'E', 'N'] True
+['L', 'G', 'C', 'T', 'N', 'X', 'J', 'D', 'E', 'H'] True
 score {'S': 14, 'T': 81, 'C': 91, 'O': 74, 'Q': 2}
 magic 0xd13223588fda6ca4
-['Q', 'S', 'T', 'C', 'O'] True
+['S', 'O', 'Q', 'T', 'C'] True
 score {'M': 26, 'Y': 44, 'W': 18}
 magic 0x27adc9eb95fa0627
 ['W', 'Y', 'M'] True
 score {'Z': 57, 'L': 61, 'D': 80, 'C': 30, 'M': 95, 'T': 78, 'V': 38, 'G': 57, 'Q': 47, 'K': 38}
 magic 0x3d7beac4badba914
-['G', 'D', 'L', 'V', 'K', 'M', 'Q', 'Z', 'C', 'T'] True
+['G', 'C', 'K', 'M', 'Z', 'V', 'L', 'T', 'Q', 'D'] True
 score {'D': 33, 'Q': 91, 'K': 28, 'Y': 70, 'O': 21, 'B': 60}
 magic 0xd0eae35067feb7be
-['B', 'D', 'Y', 'Q', 'K', 'O'] True
+['O', 'B', 'K', 'Q', 'D', 'Y'] True
 score {'F': 36, 'G': 52}
 magic 0x4ecc14afce878d1c
-['G', 'F'] True
+['F', 'G'] True
 score {'Y': 76, 'P': 45, 'O': 8, 'M': 63, 'W': 97, 'V': 87}
 magic 0xe264c8c0a070662a
-['P', 'M', 'O', 'V', 'W', 'Y'] True
+['O', 'P', 'W', 'V', 'M', 'Y'] True
 score {'L': 32, 'M': 61, 'N': 84, 'U': 93, 'S': 34}
 magic 0x4afb51805314e9f9
-['L', 'M', 'S', 'U', 'N'] True"""
+['N', 'M', 'L', 'S', 'U'] True
+"""
 }
 
 FORBIDDEN_CODEPOINTS = range(0xD800, 0xDFFF + 1) # surrogates
