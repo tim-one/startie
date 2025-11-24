@@ -1,5 +1,18 @@
 const crypto = require('crypto');
 
+// We compute various stuff from the names and scores. For
+// simplicity, work with a list of new objects that remembers
+// this stuff. Saves, e.g., repeated decorate-sort-undecorate
+// dances.
+function makeItems(score) {
+    return Object.keys(score).map(name => ({
+      name: name,
+      utf: Buffer.from(name, 'utf8'),
+      stars: int2bytes(score[name]),
+      hash: undefined
+    }));
+}
+
 function int2bytes(n) {
   if (n < 0) throw new Error("n must be nonnegative");
   const bytes = [0];
@@ -12,37 +25,36 @@ function int2bytes(n) {
   return Buffer.from(bytes);
 }
 
-function canonicalSalt(score, magic) {
-  const items = Object.entries(score)
-    .sort((a, b) => Buffer.from(a[0], 'utf8').compare(
-                    Buffer.from(b[0], 'utf8')));
+function canonicalSalt(items, magic) {
   const buffers = [Buffer.from("STAR-TIE-512-v1", 'utf8')];
   buffers.push(magic);
-  for (const [name, stars] of items) {
-    buffers.push(int2bytes(stars));
+  // fold in scores by canonical order of UTF-8 names
+  items.sort((a, b) => a.utf.compare(b.utf));
+  for (const item of items) {
+    buffers.push(item.stars);
   }
   return Buffer.concat(buffers);
 }
 
-function makeKey(cand, salt) {
+function makeKey(utf, salt) {
   const h = crypto.createHash('sha512');
   h.update(salt);
-  h.update(Buffer.from(cand, 'utf8'));
+  h.update(utf);
   return h.digest();
 }
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
 function permute(score, magic=EMPTY_BUFFER) {
-  const salt = canonicalSalt(score, magic);
-  const candidates = Object.keys(score);
-  // Use DSU pattern to sort names by the cryto-hash sort keys.
-  const decorated = candidates.map(name => ({
-    name: name,
-    key: makeKey(name, salt)
-  }));
-  decorated.sort((a, b) => a.key.compare(b.key));
-  return decorated.map(item => item.name);
+  const items = makeItems(score);
+  const salt = canonicalSalt(items, magic);
+  // create crypto hashes
+  for (const item of items) {
+    item.hash = makeKey(item.utf, salt);
+  }
+  // and return names sorted by hash
+  items.sort((a, b) => a.hash.compare(b.hash));
+  return items.map(item => item.name);
 }
 
 module.exports = {"permute" : permute}
