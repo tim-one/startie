@@ -111,7 +111,7 @@ Other _potential_ problems could come from "normalization", fancy schemes that a
 
 So it remains that their crypto hashes may nevertheless be the same. That's phenomenally unlikely. Collison resistance is a primary design goal of crypto hashes, and to date there is no publicly known case of two distinct inputs of _any_ kind whose hashes collide. That's not for lack of trying.
 
-If it happens anyway, the tiebreaking may or may not match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, and dicts preserve insertion order, so at least the results will be reproducible across runs of the Python implementation. I'm not sure about `Node.js` details. but believe that's all true under that too. But stability in both implementations doesn't help cross-implementation identical behavior unless both implementations are fed score dicts with names in the same order to begin with.
+If it happens anyway, the tiebreaking may or may not match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, so at least the results will be reproducible across runs of the Python implementation. I'm not sure about `Node.js` details. but believe that's true under that too. If both environments have stable sorts, their results will match (it's sorted by UTF-8 first, which forces the same order regardless of ioput order, and later sorted by crypto hash).
 
 But, "won't happen", so don't worry about it :smile:.
 
