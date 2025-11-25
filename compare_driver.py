@@ -129,7 +129,7 @@ def main(output=None):
                 print("Score dict:", score)
                 print("Python:", py_perm)
                 print("Node:  ", node_perm)
-                sys.exit(1)
+                raise SystemExit(1)
             if output:
                 print(py_perm, file=output)
             if t % 1000 == 999:
