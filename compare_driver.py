@@ -86,12 +86,11 @@ class NodeServer:
                 # Wait for and read the response
                 # Using get(timeout=...) to prevent blocking forever if
                 # something goes wrong
-                processed_line = node_output_queue.get(timeout=5)
+                json_result = node_output_queue.get(timeout=5)
             except queue.Empty:
                 print("Error: Timed out waiting for response from Node.js.")
                 raise
-            processed_object = json.loads(processed_line)
-            return processed_object
+            return json.loads(json_result)
         except BrokenPipeError:
             print("Error: Node.js process terminated unexpectedly.")
             raise
@@ -118,11 +117,14 @@ def main(output=None):
         server = NodeServer("./permute_server.js")
         server.start()
         i = 0
-        trials = 100_000
-        for t in range(trials):
+        trials = 1_000_000
+        for t in range(1, trials + 1):
             magic = secrets.token_bytes(8)
             score = random_score_dict(num_candidates=12, max_score=5000)
             py_perm = permute(score, magic)
+            # JSON doesn't know what to do with bytes. So change `magic`
+            # to a list of ints. On the other end, something similar to
+            # bytes is built by Buffer.from(that_list).
             node_perm = server.call(score=score, magic=list(magic))
             if py_perm != node_perm:
                 print("? Mismatch on trial", t)
@@ -132,10 +134,10 @@ def main(output=None):
                 raise SystemExit(1)
             if output:
                 print(py_perm, file=output)
-            if t % 1000 == 999:
-                print(t+1, "of", trials, "done", end="\r")
+            if not t % 1000:
+                print(f"{t:_} of {trials:_} done", end="\r")
         print()
-        print(f"All {trials} trials matched")
+        print(f"All {trials:_} trials matched")
     finally:
         server.close()
 
