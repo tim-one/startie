@@ -148,26 +148,36 @@ The default is the empty byte string.
 # candidate's name. The scores are already in the salt.
 
 import hashlib
-from operator import itemgetter as _get
+from operator import attrgetter
 
 __all__ = ["permute"]
+
+# We compute varius stuff from the score dict. For simplicity and better
+# "looks a lot alike" with the Node.js implementation, work instead with
+# objects that remember intermediate results.
+class Candidate:
+    __slots__ = 'name', 'utf', 'stars', 'hash'
+
+    def __init__(self: Candidate,
+                 name: str,
+                 stars: int) -> Candidate:
+        self.name = name
+        self.utf = name.encode()
+        self.stars = stars
+        self.hash = None # computed later
+
+_get_name =  attrgetter("name")
+_get_utf =   attrgetter("utf")
+_get_stars = attrgetter("stars")
+_get_hash =  attrgetter("hash")
 
 # Calling _canonical_salt([]) will return a digest with the hash of
 # VERSION. See versions.txt for history.
 VERSION = b"STAR-TIE-512-v1"
 
-# We compute varius stuff from the score dict. For simplicity and better
-# "looks a lot alike" with the Node.js implementation, work instead with
-# little lists that remember intermediate results. Curiously, to my eyes
-# this makes the Javascript easier to follow, but the Python code a
-# little harder!
-_NAME_INDEX, _UTF_INDEX, _STARS_INDEX, _HASH_INDEX = range(4)
-_get_NAME,   _get_UTF,   _get_STARS,   _get_HASH = map(_get, range(4))
 
-def _get_items(score: dict[str, int]) -> \
-               list[list[str, bytes, bytes, bytes]]:
-    return [[name, name.encode(), _int2bytes(stars), None]
-            for name, stars in score.items()]
+def _get_cands(score: dict[str, int]) -> list(Candidate):
+    return [Candidate(name, stars) for name, stars in score.items()]
 
 # Return little-endian represetation of int `n`, with a zero byte added
 # to both ends. The latter is to prevent ints from being mistaken for
@@ -181,13 +191,14 @@ def _int2bytes(n: int) -> bytea:
             + n.to_bytes(-(n.bit_length() // -8), 'little')
             + b'\x00')
 
-def _canonical_salt(items: list,
+def _canonical_salt(cands: list[Candidate],
                     magic: bytes=b'') -> hashlib._Hash:
     h = hashlib.sha512(VERSION + magic)
     # Sort candidate names by raw UTF-8 bytes.
-    items.sort(key=_get_UTF)
+    cands.sort(key=_get_utf)
     # Hash the scorea in order of UTF-8.
-    h.update(b''.join(map(_get_STARS, items)))
+    h.update(b''.join(map(_int2bytes,
+                          map(_get_stars, cands))))
     return h
 
 def _make_key(utf: bytes,
@@ -198,12 +209,12 @@ def _make_key(utf: bytes,
 
 def permute(score: dict[str, int],
             magic: bytes=b'') -> list[str]:
-    items = _get_items(score)
-    salt = _canonical_salt(items, magic)
-    for item in items:
-        item[_HASH_INDEX] = _make_key(item[_UTF_INDEX], salt)
-    items.sort(key=_get_HASH)
-    return list(map(_get_NAME, items))
+    cands = _get_cands(score)
+    salt = _canonical_salt(cands, magic)
+    for cand in cands:
+        cand.hash = _make_key(cand.utf, salt)
+    cands.sort(key=_get_hash)
+    return list(map(_get_name, cands))
 
 # Example
 # score = {"Alice": 5, "Bob": 3, "Charlie": 7}
