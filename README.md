@@ -73,7 +73,7 @@ Note that `permute()` is intended to be called exactly once per election, after 
 
 `compare_driver.py` constructs random score dicts and ensures that the Python and Node implementations produce the same permutations. Edit it to change the number of test cases run, the number of candidates, and the maximum candidate score. That's less work for you too than trying to remember command line conventions :wink:.
 
-`chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates. Run Python with "-u" so the progress display updates properly in a terminal window (prints progress output ending with a carriage return to overwrite the displayed line).
+`chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates/
 
 `run_node.py` supplies function `node_permute()`, with the same signature as the Python `permute()`, but invokes the Node version to return the result computed by the latter. Mostly for testing.
 
@@ -107,11 +107,13 @@ Other _potential_ problems could come from "normalization", fancy schemes that a
 
 **Q:** What happens if two sort keys are the same?
 
-**A:** Won't happen. Note that two names' UTF-8 encodings can't be the same in this context. It's an election, and if ballots displayed two names the same way, voters couldn't distinguish between them. So all names display uniquely. That implies that their UTF-8 encodigs must also be pairwise distinct ("different displays" implies "different sequence of Unicode code points" implies "different encodings").
+**A:** Won't happen. Note that two names' UTF-8 encodings can't be the same in this context. It's an election, and if ballots displayed two names the same way, voters couldn't distinguish between them. So all names display uniquely. That implies that their UTF-8 encodings must also be pairwise distinct ("different displays" implies "different sequence of Unicode code points" implies "different encodings").
 
 So it remains that their crypto hashes may nevertheless be the same. That's phenomenally unlikely. Collison resistance is a primary design goal of crypto hashes, and to date there is no publicly known case of two distinct inputs of _any_ kind whose hashes collide. That's not for lack of trying.
 
-If it happens anyway, the tiebreaking may or may not match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, and dicts preserve insertion order, so at least the results will be reproducible across runs of the Python implementation. I don't know about `Node.js` details. But, "won't happen", so don't worry about it :smile:.
+If it happens anyway, the tiebreaking may or may not match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, and dicts preserve insertion order, so at least the results will be reproducible across runs of the Python implementation. I'm not sure about `Node.js` details. but believe that's all true under that too. But stability in both implementations doesn't help cross-implementation identical behavior unless both implementations are fed score dicts with names in the same order to begin with.
+
+But, "won't happen", so don't worry about it :smile:.
 
 ## Acks
 
