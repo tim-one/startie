@@ -175,10 +175,6 @@ _get_utf =   attrgetter("utf")
 _get_stars = attrgetter("stars")
 _get_hash =  attrgetter("hash")
 
-
-def _get_cands(score: dict[str, int]) -> list(Candidate):
-    return [Candidate(name, stars) for name, stars in score.items()]
-
 # Return little-endian represetation of int `n`, with a zero byte added
 # to both ends. The latter is to prevent ints from being mistaken for
 # UTF-8 bytes when catenating fields (UTF-8 never contains a zero byte
@@ -201,18 +197,18 @@ def _canonical_salt(cands: list[Candidate],
                           map(_get_stars, cands))))
     return h
 
-def _make_key(utf: bytes,
+def _make_key(cand: Candidate,
               salt: hashlib._Hash) -> bytes:
     h = salt.copy()
-    h.update(utf)
+    h.update(cand.utf)
     return h.digest()
 
 def permute(score: dict[str, int],
             magic: bytes=b'') -> list[str]:
-    cands = _get_cands(score)
+    cands = [Candidate(*pair) for pair in score.items()]
     salt = _canonical_salt(cands, magic)
     for cand in cands:
-        cand.hash = _make_key(cand.utf, salt)
+        cand.hash = _make_key(cand, salt)
     cands.sort(key=_get_hash)
     return list(map(_get_name, cands))
 
