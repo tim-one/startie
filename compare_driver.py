@@ -63,12 +63,12 @@ class NodeServer:
             ['node', self.codepath],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True, # use text mode for automatic encoding/decoding
-            bufsize=1, # line-buffered)
-            universal_newlines=True,
+            encoding="utf-8",
+            bufsize=1, # line-buffered
             )
-        self.proc.stdout.reconfigure(encoding="utf-8")
+
         # Start a separate thread to read from the Node.js stdout
         self.thread = threading.Thread(
             target=read_node_output,
@@ -111,6 +111,7 @@ class NodeServer:
             # Kill the process if it's still running
             node_process.kill()
             node_process.wait()
+
 
 def main(output=None):
     try:
