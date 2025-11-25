@@ -1,7 +1,142 @@
-import random, sys, secrets, doctest
+import random, sys, secrets
 from itertools import filterfalse
 from permute import permute  # Python implementation
 from run_node import node_permute
+import subprocess
+import threading
+import queue
+import sys
+import json
+
+
+FORBIDDEN_CODEPOINTS = range(0xD800, 0xDFFF + 1) # surrogates
+print(format(len(FORBIDDEN_CODEPOINTS), '_'),
+      "forbidden code points")
+ISBADCP = FORBIDDEN_CODEPOINTS.__contains__
+ALLCP = range(0x110000)
+
+if 1:
+    # verify by brute force that Python has the same idea.
+    for i in ALLCP:
+        cp = chr(i)
+        try:
+            ignore = cp.encode("utf-8")
+        except:
+            assert ISBADCP(i), (i, hex(i))
+        else:
+            assert not ISBADCP(i), (i, hex(i))
+
+def random_unicode_string(length=10):
+    assert length >= 0
+    got = []
+    while need := length - len(got):
+        assert need > 0
+        trial = random.choices(ALLCP, k=need)
+        got.extend(filterfalse(ISBADCP, trial))
+    assert len(got) == length
+    return ''.join(map(chr, got))
+
+def random_score_dict(num_candidates=10, max_score=500):
+    # Random candidate names from full plausibie Unicode set.
+    return {random_unicode_string(random.randint(1, 30)):
+            random.randint(0, max_score)
+            for i in range(num_candidates)}
+
+    # Generate candidate names like "C0", "C1", ...
+    return {f"C{i}": random.randint(0, max_score)
+            for i in range(num_candidates)}
+
+node_output_queue = queue.Queue()
+
+def read_node_output(stream, output_queue):
+    """Function to read from Node.js stdout in a separate thread."""
+    for line in iter(stream.readline, ''):
+        output_queue.put(line)
+    stream.close()
+
+class NodeServer:
+    def __init__(self, codepath):
+        self.codepath = codepath
+
+    def start(self):
+        self.proc = subprocess.Popen(
+            ['node', self.codepath],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True, # use text mode for automatic encoding/decoding
+            bufsize=1, # line-buffered)
+            universal_newlines=True,
+            )
+        self.proc.stdout.reconfigure(encoding="utf-8")
+        # Start a separate thread to read from the Node.js stdout
+        self.thread = threading.Thread(
+            target=read_node_output,
+            args=(self.proc.stdout, node_output_queue),
+            daemon=True)
+            # Daemon threads exit when the main program exits
+        self.thread.start()
+
+    def call(self, **kws):
+        try:
+            json_string = json.dumps(kws) + '\n'
+            self.proc.stdin.write(json_string)
+            self.proc.stdin.flush()
+            try:
+                # Wait for and read the response
+                # Using get(timeout=...) to prevent blocking forever if
+                # something goes wrong
+                processed_line = node_output_queue.get(timeout=5)
+            except queue.Empty:
+                print("Error: Timed out waiting for response from Node.js.")
+                raise
+            processed_object = json.loads(processed_line)
+            return processed_object
+        except BrokenPipeError:
+            print("Error: Node.js process terminated unexpectedly.")
+            raise
+        except Exception as e:
+            print(f"An unexpected error occurred: {e!r}")
+            raise
+
+    def close(self):
+        # Close the stdin pipe to signal the end of input
+        self.proc.stdin.close()
+
+        # Wait for the Node.js process to terminate
+        self.proc.wait(timeout=10)
+
+        if self.proc.poll() is None:
+            print("Killing Node.js!")
+            # Kill the process if it's still running
+            node_process.kill()
+            node_process.wait()
+
+def main(output=None):
+    try:
+        server = NodeServer("./permute_server.js")
+        server.start()
+        i = 0
+        trials = 100_000
+        for t in range(trials):
+            magic = secrets.token_bytes(8)
+            score = random_score_dict(num_candidates=12, max_score=5000)
+            py_perm = permute(score, magic)
+            node_perm = server.call(score=score, magic=list(magic))
+            if py_perm != node_perm:
+                print("? Mismatch on trial", t)
+                print("Score dict:", score)
+                print("Python:", py_perm)
+                print("Node:  ", node_perm)
+                sys.exit(1)
+            if output:
+                print(py_perm, file=output)
+            if t % 1000 == 999:
+                print(t+1, "of", trials, "done", end="\r")
+        print()
+        print(f"All {trials} trials matched")
+    finally:
+        server.close()
 
 __test__ = {'main':
 """
@@ -56,70 +191,10 @@ magic 0x4afb51805314e9f9
 """
 }
 
-FORBIDDEN_CODEPOINTS = range(0xD800, 0xDFFF + 1) # surrogates
-print(format(len(FORBIDDEN_CODEPOINTS), '_'),
-      "forbidden code points")
-ISBADCP = FORBIDDEN_CODEPOINTS.__contains__
-ALLCP = range(0x110000)
-
-if 1:
-    # verify by brute force that Python has the same idea.
-    for i in ALLCP:
-        cp = chr(i)
-        try:
-            ignore = cp.encode("utf-8")
-        except:
-            assert ISBADCP(i), (i, hex(i))
-        else:
-            assert not ISBADCP(i), (i, hex(i))
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     import doctest
     outcome = doctest.testmod()
     print("doctest result:", outcome)
-
-def random_unicode_string(length=10):
-    assert length >= 0
-    got = []
-    while need := length - len(got):
-        assert need > 0
-        trial = random.choices(ALLCP, k=need)
-        got.extend(filterfalse(ISBADCP, trial))
-    assert len(got) == length
-    return ''.join(map(chr, got))
-
-def random_score_dict(num_candidates=10, max_score=500):
-    # Random candidate names from full plausibie Unicode set.
-    return {random_unicode_string(random.randint(1, 30)):
-            random.randint(0, max_score)
-            for i in range(num_candidates)}
-
-    # Generate candidate names like "C0", "C1", ...
-    return {f"C{i}": random.randint(0, max_score)
-            for i in range(num_candidates)}
-
-def main(output=None):
-    trials = 1000
-    for t in range(trials):
-        magic = secrets.token_bytes(8)
-        score = random_score_dict(num_candidates=12, max_score=5000)
-        py_perm = permute(score, magic)
-        node_perm = node_permute(score, magic)
-        if py_perm != node_perm:
-            print("? Mismatch on trial", t)
-            print("Score dict:", score)
-            print("Python:", py_perm)
-            print("Node:  ", node_perm)
-            sys.exit(1)
-        if output:
-            print(py_perm, file=output)
-        print(t+1, "of", trials, "done", end="\r")
-    print()
-    print(f"All {trials} trials matched")
-
-if __name__ == "__main__":
-    if 0: # enable this for some debugging output
-        with open("output.txt", "w", encoding="utf-8") as f:
-            main(f)
-    else:
-        main()
+    if outcome.failed:
+        sys.exit(1)
+    main()
