@@ -96,6 +96,10 @@ The default is the empty byte string.
 >>> assert got == expected
 """
 
+# Calling _canonical_salt([]) will return a digest with the hash of
+# VERSION. See versions.txt for history.
+VERSION = b"STAR-TIE-512-v1"
+
 # The basic idea is to sort names via a key that's a crypto hash of
 # the name and its score.
 
@@ -170,10 +174,6 @@ _get_name =  attrgetter("name")
 _get_utf =   attrgetter("utf")
 _get_stars = attrgetter("stars")
 _get_hash =  attrgetter("hash")
-
-# Calling _canonical_salt([]) will return a digest with the hash of
-# VERSION. See versions.txt for history.
-VERSION = b"STAR-TIE-512-v1"
 
 
 def _get_cands(score: dict[str, int]) -> list(Candidate):
