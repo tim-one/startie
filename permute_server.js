@@ -1,9 +1,9 @@
-// Set up the Node side up a "permute server".
+// Set up the Node side "permute server".
 // It reads test cases from stdin, and writes
 // `permute()` results to stdout, using JSON
 // in both directions. This is "1-liner" JSON,
 // using a newline to delimit distinct test
-// cases.
+// cases and 
 import { createInterface } from 'node:readline';
 import { permute } from './permute.js';
 
@@ -13,7 +13,7 @@ const rl = createInterface({
 });
 
 rl.on('line', (line) => {
-  if (line.trim().length === 0) return;
+  //if (line.trim().length === 0) return;
 
   try {
     const args = JSON.parse(line);
@@ -25,5 +25,4 @@ rl.on('line', (line) => {
   }
 });
 
-// We can ignore the 'close' event as the pipe will close when
-// the parent Python process ends.
+// We can ignore the 'close' event.
