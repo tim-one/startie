@@ -32,7 +32,12 @@ def chi2_cdf(x, df):
 
     return float(gammainc(df/2, 0, x/2, True))
 
-def check(NCANDS, HILIMIT=500):
+def check(NCANDS, HILIMIT=11):
+    # The fewer the voters the harder it is to extract differences,
+    # because the possible scores in a score dict are limited to a
+    # maximum of 5 * number_voters. HILIMIT=11 corresponds to scores in
+    # range(11), appropriate for only 2 voters. That's the hardest
+    # realistic test there is, so that's what we use.
     scorerange = range(HILIMIT)
     cands = cand_names[:NCANDS]
     nbins = factorial(NCANDS)

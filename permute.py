@@ -162,9 +162,7 @@ __all__ = ["permute"]
 class Candidate:
     __slots__ = 'name', 'utf', 'stars', 'hash'
 
-    def __init__(self: Candidate,
-                 name: str,
-                 stars: int) -> Candidate:
+    def __init__(self: Candidate, name: str, stars: int):
         self.name = name
         self.utf = name.encode()
         self.stars = stars
