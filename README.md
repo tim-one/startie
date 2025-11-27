@@ -91,7 +91,7 @@ No 100% deterministic method can be made wholly immune to this. I would love to 
 
 A more fundamental limitation: given a fixed set of candidate names and a fixed salt, $C$ candidates, and $B$ ballots, there are $(5B+1)^C$ possible score dicts and $C!$ possible permutations. While the number of score dicts grows quickly with $C$, the number of permutations grows more quickly still. When the number of score dicts $\lt C!$, it's impossible to generate all possible permutations. A score dict determines the permutation, and there just aren't enough possibilities.
 
-However, this doesn't appear to be a realistic concern. Even with just 2 ballots ($B=2$), the number of possible score dicts exceeds the number of permutatinos until there are 28 candidates:
+However, this doesn't appear to be a realistic concern. Even with just 2 ballots ($B=2$), the number of possible score dicts exceeds the number of permutations until there are 28 candidates:
 
 ```python
 >>> from math import factorial
