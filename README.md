@@ -89,6 +89,19 @@ Of course some score dicts are more likely than others, and there are many ways 
 
 No 100% deterministic method can be made wholly immune to this. I would love to incorporate some actual entropy (e.g., fold in 8 bytes from Python's `secrets.token_bytes(8)`), and then not even the admin could influence the outcome in any effective way, short of "stuffing the ballot box" with imaginary voters under whose names they cast their own ballots. I hope to make such a change, but it depends on whether clients are willing to change their UIs to report the magical bytes picked along with the final anonymized ballots, so that their claimed outcomes can be independently reproduced. Later: and I made that change. The API now supports an optional `magic` argument to incorporate genuine entropy. Its use is highly encouraged, but if it's ignored the results are the same as before.
 
+A more fundamental limitation: given a fixed set of candidate names and a fixed salt, $C$ candidates, and $B$ ballots, there are $(5B+1)^C$ possible score dicts and $C!$ possible permutations. While the number of score dicts grows quickly with $C$, the number of permutations grows more quickly still. When the number of score dicts $\lt C!$, it's impossible to generate all possible permutations. A score dict determines the permutation, and there just aren't enough possibilities.
+
+However, this doesn't appear to be a realistic concern. Even with just 2 ballots ($B=2$), the number of possible score dicts esceeds the number of permutatinos until there are 28 candidates:
+
+```python
+>>> from math import factorial
+>>> 11**27 < factorial(27)
+False
+>>> 11**28 < factorial(28)
+True
+
+```
+
 ## Q&A
 
 **Q:** What remains to be done? Do you want help?
