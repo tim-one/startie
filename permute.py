@@ -162,7 +162,12 @@ __all__ = ["permute"]
 class Candidate:
     __slots__ = 'name', 'utf', 'stars', 'hash'
 
-    def __init__(self: Candidate, name: str, stars: int):
+    name: str
+    utf: bytes
+    stars: int
+    hash: bytes | None
+
+    def __init__(self, name: str, stars: int):
         self.name = name
         self.utf = name.encode()
         self.stars = stars
@@ -197,14 +202,15 @@ def _canonical_salt(cands: list[Candidate],
 
 def _make_key(cand: Candidate,
               salt: hashlib._Hash) -> bytes:
-    h = salt.copy()
+    h: hashlib._Hash = salt.copy()
     h.update(cand.utf)
     return h.digest()
 
 def permute(score: dict[str, int],
             magic: bytes=b'') -> list[str]:
-    cands = [Candidate(*pair) for pair in score.items()]
-    salt = _canonical_salt(cands, magic)
+    cands: list[Candidate] = [Candidate(*pair)
+                              for pair in score.items()]
+    salt: hashlib._Hash = _canonical_salt(cands, magic)
     for cand in cands:
         cand.hash = _make_key(cand, salt)
     cands.sort(key=_get_hash)
