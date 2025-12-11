@@ -36,10 +36,10 @@ def random_unicode_string(length=10):
     assert len(got) == length
     return ''.join(map(chr, got))
 
-def random_score_dict(num_candidates=10, max_score=500):
+def random_score_dict(LO, HI, num_candidates):
     # Random candidate names from full plausibie Unicode set.
-    return {random_unicode_string(random.randint(1, 30)):
-            random.randint(0, max_score)
+    return {random_unicode_string(random.randint(1, 30)) :
+            random.randrange(LO, HI)
             for i in range(num_candidates)}
 
     # Generate candidate names like "C0", "C1", ...
@@ -117,27 +117,30 @@ def main(output=None):
         server = NodeServer("./permute_server.js")
         server.start()
         i = 0
-        trials = 1_000_000
-        for t in range(1, trials + 1):
-            magic = secrets.token_bytes(8)
-            score = random_score_dict(num_candidates=12, max_score=5000)
-            py_perm = permute(score, magic)
-            # JSON doesn't know what to do with bytes. So change `magic`
-            # to a list of ints. On the other end, something similar to
-            # bytes is built by Buffer.from(that_list).
-            node_perm = server.call(score=score, magic=list(magic))
-            if py_perm != node_perm:
-                print("? Mismatch on trial", t)
-                print("Score dict:", score)
-                print("Python:", py_perm)
-                print("Node:  ", node_perm)
-                raise SystemExit(1)
-            if output:
-                print(py_perm, file=output)
-            if not t % 1000:
-                print(f"{t:_} of {trials:_} done", end="\r")
-        print()
-        print(f"All {trials:_} trials matched")
+        for tag, trials, LO, HI in [("53-bit", 1_000, 1 << 52, 1 << 53),
+                                    ("normal", 1_000_000, 0, 5000)]:
+            print(f"trying {trials:_} {tag} score cases ...")
+            for t in range(1, trials + 1):
+                magic = secrets.token_bytes(8)
+                score = random_score_dict(LO, HI, 12)
+                py_perm = permute(score, magic)
+                # JSON doesn't know what to do with bytes. So change `magic`
+                # to a list of ints. On the other end, something similar to
+                # bytes is built by Buffer.from(that_list).
+                node_perm = server.call(score=score, magic=list(magic))
+                if py_perm != node_perm:
+                    print("? Mismatch on trial", t)
+                    print("Score dict:", score)
+                    print("Python:", py_perm)
+                    print("Node:  ", node_perm)
+                    raise SystemExit(1)
+                if output:
+                    print(py_perm, file=output)
+                if not t % 1000:
+                    print(f"{t:_} of {trials:_} done", end="\r")
+            print()
+            print(f"all {trials:_} trials matched")
+            print()
     finally:
         server.close()
 
