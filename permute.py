@@ -4,7 +4,7 @@ permutation of the keys of the score dict, reproducible "forever"
 and across multiple languages.
 
 >>> VERSION # if this changes, test output will change too
-b'STAR-TIE-512-v1'
+b'STAR-TIE-512-v2'
 >>> cands = 'ABCDE'
 >>> score = dict(zip(cands, range(len(cands))))
 >>> score
@@ -62,11 +62,13 @@ ABDCE
 BEDCA
 >>> assert permute(score) == expected
 
-The optional "magic" argument can be used to inject some true
-randomness. For example, pass `secrets.token_bytes(8))`. It's highly
-recommended. Any bytes object can be used, provided it can't be guessed,
-and every bit can make a difference. 8 bytes offers strong protection
-against manipulation with scant overhead.
+The optional "magic" argument is required in any adversarial or high-
+stakes election context. It injects randomness that is necessary to
+prevent manipulation by actors who can influence score totals.
+
+For protocol v2, use 8 bytes of unpredictable entropy (e.g.
+`secrets.token_bytes(8)`). Any bytes object can be used, provided it
+can't be guessed and every bit can make a difference.
 
 >>> seen = set()
 >>> for magicint in range(10):
@@ -98,7 +100,7 @@ The default is the empty byte string.
 
 # Calling _canonical_salt([]) will return a digest with the hash of
 # VERSION. See versions.txt for history.
-VERSION = b"STAR-TIE-512-v1"
+VERSION = b"STAR-TIE-512-v2"
 
 # The basic idea is to sort names via a key that's a crypto hash of
 # the name and its score.
@@ -183,36 +185,37 @@ _get_hash =  attrgetter("hash")
 # UTF-8 bytes when catenating fields (UTF-8 never contains a zero byte
 # unless it's a single-character 0 byte, which won't appear in candidate
 # names).
-def _int2bytes(n: int) -> bytea:
+def _int2bytes(n: int) -> bytes:
     if n < 0:
         raise ValueError("n must be nonnegative")
-    return (  b'\x00'
-            + n.to_bytes(-(n.bit_length() // -8), 'little')
-            + b'\x00')
+    # Fixed-width 8-byte little-endian representation (protocol v2) for all scores.
+    return n.to_bytes(8, 'little', signed=False)
 
 def _canonical_salt(cands: list[Candidate],
-                    magic: bytes=b'') -> hashlib._Hash:
+                    magic: bytes=b'') -> bytes:
     h = hashlib.sha512(VERSION + magic)
     # Sort candidate names by raw UTF-8 bytes.
     cands.sort(key=_get_utf)
     # Hash the scorea in order of UTF-8.
     h.update(b''.join(map(_int2bytes,
                           map(_get_stars, cands))))
-    return h
+    return h.digest()
 
 def _make_key(cand: Candidate,
-              salt: hashlib._Hash) -> bytes:
-    h: hashlib._Hash = salt.copy()
+              salt_digest: bytes) -> bytes:
+    h = hashlib.sha512(salt_digest)
     h.update(cand.utf)
     return h.digest()
 
 def permute(score: dict[str, int],
             magic: bytes=b'') -> list[str]:
+    if magic and len(magic) != 8:
+        raise ValueError("magic must be 0 or 8 bytes for STAR-TIE-512-v2")
     cands: list[Candidate] = [Candidate(*pair)
                               for pair in score.items()]
-    salt: hashlib._Hash = _canonical_salt(cands, magic)
+    salt_digest = _canonical_salt(cands, magic)
     for cand in cands:
-        cand.hash = _make_key(cand, salt)
+        cand.hash = _make_key(cand, salt_digest)
     cands.sort(key=_get_hash)
     return list(map(_get_name, cands))
 
@@ -220,7 +223,7 @@ def permute(score: dict[str, int],
 # score = {"Alice": 5, "Bob": 3, "Charlie": 7}
 # print(permute(score))
 
-assert _canonical_salt([]).hexdigest() == hashlib.sha512(VERSION).hexdigest()
+assert _canonical_salt([]) == hashlib.sha512(VERSION).digest()
 
 if __name__ == "__main__":
     import doctest

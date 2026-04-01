@@ -20,52 +20,43 @@ Suffice it to say that all known problems appear to have been worked out, and re
 
 ## API
 
-The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score, magic=)`. which takes a dict (Python. or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a "randomly permuted" list of names (the score dict's keys). `magic` is an optional bytes object intended to fold in external "genuine entropy", such as from Python's `secrets.token_bytes(8}` or Node's `crypto.randomBytes(8)`.
+The primary files are:
+
+- Python: `permute.py`
+- JS/Node: `permute.js`
+- Rust: `rust/src/lib.rs`
+
+Each supplies a function `permute(score, magic)` which takes a mapping from names (Unicode strings) to scores (non-negative integers) and returns a deterministic permutation of the names.
+
+**V2 Protocol:** For STAR-TIE-512-v2, `magic` is a **mandatory** 8-byte entry injection. Use `secrets.token_bytes(8)` in Python or `crypto.randomBytes(8)` in Node. This prevents bias and manipulation.
 
 #### Python
 
 ```python
 def permute(score: dict[str, int],
-            magic: bytes=b'') -> list[str]:
+            magic: bytes) -> list[str]:
 ```
 
-```python
-$ py
->>> from permute import permute
->>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-['B', 'D', 'C', 'A']
->>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, bytes([42]))
-['D', 'A', 'B', 'C']
-
-```
-
-#### Node.js
+#### JavaScript
 
 ```js
-const EMPTY_BUFFER = Buffer.alloc(0);
-
-function permute(score, magic=EMPTY_BUFFER) {
+function permute(score, magic)
 ```
 
-- `score` is an `Object` with string properties and int values.
-- `magic` is a Node `Buffer` of little ints, a subclass of `Uint8Array`.
+- `score` is an `Object` with string keys and integer values.
+- `magic` is a 8-byte `Buffer`.
 
-```js
-$ node
-Welcome to Node.js v24.11.1.
-Type ".help" for more information.
-> {permute} = require("./permute")
-{ permute: [Function: permute] }
-> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-[ 'B', 'D', 'C', 'A' ]
-> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, Buffer.from([42]))
-[ 'D', 'A', 'B', 'C' ]
+#### Rust
 
+```rust
+pub fn permute(scores: &[(String, i64)], magic: &[u8]) -> Vec<String>
 ```
 
-#### All implementations
+### Protocol v2 Changes
 
-Using `magic` is **highly** encouraged. Without it, there are known insecurities, as explained in "Limitations" below. While they appear to be at worst minor in elections of non-trivial size, better safe than sorry. An 8-byte "really random" `magic` expands the search space for all known attacks by a factor of $$2^{64}$$
+The v2 protocol fixes a statistical bias discovered in the v1 implementation. It ensures that the salt and candidate keys are properly independent by hashing the salt before using it as a prefix for candidate name hashes. It also standardizes on 8-byte little-endian fixed-width encoding for all integers to prevent collision attacks.
+
+Using `magic` is mandatory for any adversarial or high-stakes election. An 8-byte "really random" `magic` prevents any prediction or manipulation of the permutation before the election is finalized.
 
 Note that `permute()` is intended to be called exactly once per election, after the election is closed, to prepare for possible ties in the scoring phase. The code is written for clarity & simplicity rather than speed, but it's so fast you won't notice anyway. Time and RAM use scale with the number of candidates, which is never "large". The number of ballots is irrelevant
 
@@ -73,7 +64,9 @@ Note that `permute()` is intended to be called exactly once per election, after 
 
 `compare_driver.py` constructs random score dicts and ensures that the Python and Node implementations produce the same permutations. Edit it to change the number of test cases run, the number of candidates, and the maximum candidate score. That's less work for you too than trying to remember command line conventions :wink:.
 
-`chitests.py` uses chi-squared tests to measure how well `permute()` passes out all possible permutations about equally often. This gets very expensive even for as few as 10 candidates - and substantially larger than that would run out of RAM too! This work grows with the factorial of the number of candidates.
+`check_positional.py` is the current go-to statistical test. It uses an O(N^2) positional matrix chi-squared analysis and can validate uniformity for 30+ candidates in milliseconds, without exploding factorial RAM costs.
+
+`chitests.py` is preserved for historical/regression purposes. It still does exact chi-squared over full permutation enumeration, but it only scales to candidate counts of ~10 before the required resources blow up.
 
 `run_node.py` supplies function `node_permute()`, with the same signature as the Python `permute()`, but invokes the Node version to return the result computed by the latter. Mostly for testing.
 
@@ -81,13 +74,9 @@ Note that `permute()` is intended to be called exactly once per election, after 
 
 ## Limitations
 
-It's not actually true that nothing can be known about "score dicts" before the election closes. The names are known from the start, and the election admin contols what they are. In a Unicode world, there are many ways to change code points in ways that leave a given name "looking much the same", or even identical, despite that the UTF-8 encodings differ. Crypto hashes do a marvelous job of emulating true randomness, and changing a single bit in one's input changes about half the bits in the output, but they're still 100% deterministic. The outcomes of all "random" ties are determined solely by the final state of the score dict.
+It's not actually true that nothing can be known about "score dicts" before the election closes. The names are known from the start, and the election admin controls what they are. In a Unicode world, there are many ways to change code points in ways that leave a given name "looking much the same", or even identical, despite that the UTF-8 encodings differ. Crypto hashes do a marvelous job of emulating true randomness, and changing a single bit in one's input changes about half the bits in the output, but they're still 100% deterministic. The outcomes of all "random" ties are determined solely by the final state of the score dict.
 
-So a determined admin could, in theory, use "poke and hope" spelling changes and try all possible score dicts on each, and pick spellings that favor (or disfavor) some candidate(s) the most across all possible ties. This quickly becomes intractable as elections become larger: if there are `B` ballots and `C` candidates, there are $$(5B + 1)^C$$ possible score dicts. For example, even for a tiny 1-winner, 2-candidate STAR election with 2 voters, there are already $$11^2 = 121$$ possible score dicts.
-
-Of course some score dicts are more likely than others, and there are many ways to try to optimize such brute forre hackery, but as `B` and `C` get ever larger so does the difficulty of finding even slightly advantageous spellings. As best anyone knows, there is currently no computationally tractable way "to out-think" what SHA-512 does, so brute force is needed.
-
-No 100% deterministic method can be made wholly immune to this. I would love to incorporate some actual entropy (e.g., fold in 8 bytes from Python's `secrets.token_bytes(8)`), and then not even the admin could influence the outcome in any effective way, short of "stuffing the ballot box" with imaginary voters under whose names they cast their own ballots. I hope to make such a change, but it depends on whether clients are willing to change their UIs to report the magical bytes picked along with the final anonymized ballots, so that their claimed outcomes can be independently reproduced. Later: and I made that change. The API now supports an optional `magic` argument to incorporate genuine entropy. Its use is highly encouraged, but if it's ignored the results are the same as before.
+Without entropy, an admin could theoretically manipulate spellings (e.g., swapping invisible Unicode characters) to brute-force a favorable tie-breaker. However, this is computationally intractable for larger elections. By making the 8-byte magic salt mandatory in v2, this attack vector is completely closed.
 
 A more fundamental limitation: given a fixed set of candidate names and a fixed salt, $C$ candidates, and $B$ ballots, there are $(5B+1)^C$ possible score dicts and $C!$ possible permutations. While the number of score dicts grows quickly with $C$, the number of permutations grows more quickly still. When the number of score dicts $\lt C!$, it's impossible to generate all possible permutations. A score dict determines the permutation, and there just aren't enough possibilities.
 
@@ -108,13 +97,15 @@ True
 
 **A:** I'm happy with the design and the Python code, and testing has gone very well. But I'm not a native JavaScript speaker, and would really appreciate it if someone who is reviewed the JS code for "common sense" and idiomatic expression. Most of it was pasted from code suggested by a chatbot! It works, but is still a foreign language to me.
 
-**Q:** When building the "canonical salt", the Python code returns a hashlib object, but the JS code a buffer of raw bytes. Is that an error?
+**Q:** When building the "canonical salt", the Python code used to return a hashlib object, but the JS code a buffer of raw bytes. Is that an error?
 
-**A:** Sure hope not :wink:. This is due to that JS's crypto-hash API doesn't appear to offer a `.copy()` method. We're feeding the same initial raw bytes into the hash for every candidates' sort key, and using `.copy()` for that is the _purpose_ of `.copy()`. It's not really for efficiency (although it is faster), but for conceptual clarity. The JS code has no choice but to feed those raw prefix bytes into the sort key hashes repeatedly. The outcomes in the end are identical.
+**A:** In v2, it's deliberate and consistent: both implementations build a final salt digest first, then initialize a fresh SHA-512 computation per candidate by hashing `salt_digest || name_utf8`. There is no `copy()` style state reuse anymore, and the behavior is identical across Python and JS.
 
 **Q:** Unicode always causes problems. Which ones have you missed?
 
-**A:** Time will tell, but none that I know of. There are several standard ways of encoding Unicode code points, but correctly implemented conversions between any pair are lossless and reversible. We use UTF-8 because every language can convert to that, and a sequence of bytes is exactly what this algorithm needs. There's generally a minor problem when computing a crypto hash from multiple fields: the input bytes of one field are catenated with the input bytes of the next, and the idea that they're _different_ fields gets lost. But, in UTF-8, a zero byte never appears unless it's the one-character ANSI 0 byte, and candidate names will never contain one of those. So we generally alternate UTF-8 input fields with integer fields, and the latter are guaranteed (by construction) to have a 0 byte at each end. So one field can't be accidentally mistaken as part of a different field.
+**A:** Time will tell, but none that I know of. There are several standard ways of encoding Unicode code points, but correctly implemented conversions between any pair are lossless and reversible. We use UTF-8 because every language can convert to that, and a sequence of bytes is exactly what this algorithm needs.
+
+For the concatenation issue, we no longer rely on sentinel bytes in integers. Instead, we use fixed-width 8-byte little-endian encodings for all integer scores. This is strictly enforced by the protocol and prevents variable-length collisions across field boundaries.
 
 Other _potential_ problems could come from "normalization", fancy schemes that actually change code points. We certainly do none of that, and I doubt any voting service would either. They're just using Unicode to display candidate names faithfully, not analyzing them or doing computation on them.
 
@@ -124,7 +115,7 @@ Other _potential_ problems could come from "normalization", fancy schemes that a
 
 So it remains that their crypto hashes may nevertheless be the same. That's phenomenally unlikely. Collison resistance is a primary design goal of crypto hashes, and to date there is no publicly known case of two distinct inputs of _any_ kind whose hashes collide. That's not for lack of trying.
 
-If it happens anyway, the tiebreaking may or may not match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, so at least the results will be reproducible across runs of the Python implementation. I'm not sure about `Node.js` details. but believe that's true under that too. If both environments have stable sorts, their results will match (it's sorted by UTF-8 first, which forces the same order regardless of ioput order, and later sorted by crypto hash).
+If it happens anyway, the tiebreaking may or may not match across implementations. The code doesn't care, and will proceed to deliver whatever the implementation language's sort does about equal keys. In Python, the sort is stable, so at least the results will be reproducible across runs of the Python implementation. I'm not sure about `Node.js` details, but believe that's true under that too. If both environments have stable sorts, their results will match (it's sorted by UTF-8 first, which forces the same order regardless of input order, and later sorted by crypto hash).
 
 But, "won't happen", so don't worry about it :smile:.
 
