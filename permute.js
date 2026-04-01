@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 
+const VERSION = "STAR-TIE-512-v2";
+
 // We compute various stuff from the names and scores. For
 // simplicity, work with a list of new objects that remembers
 // this stuff. Saves, e.g., repeated decorate-sort-undecorate
@@ -14,19 +16,19 @@ function makeItems(score) {
 }
 
 function int2bytes(n) {
-  if (n < 0) throw new Error("n must be nonnegative");
-  const bytes = [0];
-  let x = n;
-  while (x > 0) {
-    bytes.push(x & 0xff);
-    x = Math.floor(x / 256);
+  let x = (typeof n === 'bigint') ? n : BigInt(n);
+  if (x < 0n) throw new Error("n must be nonnegative");
+  if (x > 0xFFFFFFFFFFFFFFFFn) throw new Error("n is too large");
+  const buf = Buffer.alloc(8);
+  for (let i = 0; i < 8; i++) {
+    buf[i] = Number(x & 0xFFn);
+    x >>= 8n;
   }
-  bytes.push(0);
-  return Buffer.from(bytes);
+  return buf;
 }
 
 function canonicalSalt(items, magic) {
-  const buffers = [Buffer.from("STAR-TIE-512-v1", 'utf8')];
+  const buffers = [Buffer.from(VERSION, 'utf8')];
   buffers.push(magic);
   // fold in scores by canonical order of UTF-8 names
   items.sort((a, b) => a.utf.compare(b.utf));
@@ -46,6 +48,9 @@ function makeKey(utf, salt) {
 const EMPTY_BUFFER = Buffer.alloc(0);
 
 function permute(score, magic=EMPTY_BUFFER) {
+  if (magic.length !== 0 && magic.length !== 8) {
+    throw new Error("magic must be 0 or 8 bytes for STAR-TIE-512-v2");
+  }
   const items = makeItems(score);
   const salt = canonicalSalt(items, magic);
   // create crypto hashes
@@ -57,7 +62,7 @@ function permute(score, magic=EMPTY_BUFFER) {
   return items.map(item => item.name);
 }
 
-module.exports = {"permute" : permute}
+module.exports = {"permute": permute, "VERSION": VERSION}
 
 // Example
 // const score = { Alice: 5, Bob: 3, Charlie: 7 };

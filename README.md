@@ -20,7 +20,7 @@ Suffice it to say that all known problems appear to have been worked out, and re
 
 ## API
 
-The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score, magic=)`. which takes a dict (Python. or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a "randomly permuted" list of names (the score dict's keys). `magic` is an optional bytes object intended to fold in external "genuine entropy", such as from Python's `secrets.token_bytes(8}` or Node's `crypto.randomBytes(8)`.
+The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score, magic=)`. which takes a dict (Python, or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a deterministic permutation of the names (score dict keys). `magic` is a required 8-byte entropy injection for adversarial/high-stakes use, with 0 bytes allowed only for non-adversarial compatibility testing. Use Python's `secrets.token_bytes(8)` or Node's `crypto.randomBytes(8)`.
 
 #### Python
 
@@ -65,7 +65,7 @@ Type ".help" for more information.
 
 #### All implementations
 
-Using `magic` is **highly** encouraged. Without it, there are known insecurities, as explained in "Limitations" below. While they appear to be at worst minor in elections of non-trivial size, better safe than sorry. An 8-byte "really random" `magic` expands the search space for all known attacks by a factor of $$2^{64}$$
+Using `magic` is mandatory for any adversarial or high-stakes election. Without it, there are known insecurities, as explained in "Limitations" below, and permutations can be predicted or manipulated. An 8-byte "really random" `magic` expands the search space for all known attacks by a factor of $$2^{64}$$.
 
 Note that `permute()` is intended to be called exactly once per election, after the election is closed, to prepare for possible ties in the scoring phase. The code is written for clarity & simplicity rather than speed, but it's so fast you won't notice anyway. Time and RAM use scale with the number of candidates, which is never "large". The number of ballots is irrelevant
 

@@ -6,21 +6,14 @@
 /// Results match the Python and JavaScript implementations.
 use sha2::{Digest, Sha512};
 
-const VERSION: &[u8] = b"STAR-TIE-512-v1";
+const VERSION: &[u8] = b"STAR-TIE-512-v2";
 
-/// Encode a non-negative integer as little-endian bytes with a zero byte
-/// on each end. This prevents integer bytes from being confused with UTF-8
-/// bytes when fields are concatenated.
-fn int2bytes(n: i64) -> Vec<u8> {
+/// Encode a non-negative integer as an 8-byte little-endian value.
+/// This fixed-width representation removes variable-length concatenation
+/// ambiguities.
+fn int2bytes(n: i64) -> [u8; 8] {
     assert!(n >= 0, "n must be nonnegative");
-    let mut bytes = vec![0u8]; // leading zero
-    let mut val = n as u64;
-    while val > 0 {
-        bytes.push((val & 0xFF) as u8);
-        val >>= 8;
-    }
-    bytes.push(0); // trailing zero
-    bytes
+    (n as u64).to_le_bytes()
 }
 
 /// Build the canonical salt: SHA-512 state after hashing VERSION + magic +
@@ -50,10 +43,13 @@ fn make_key(name_utf8: &[u8], salt: &Sha512) -> Vec<u8> {
 /// Return a deterministic pseudo-random permutation of candidate names.
 ///
 /// `scores` maps candidate names to their scores (totals from the scoring phase).
-/// `magic` is optional extra entropy bytes (highly recommended for real elections).
+/// `magic` is mandatory extra entropy bytes for adversarial or high-stakes elections.
 ///
 /// The result is reproducible across Python, JavaScript, and this Rust implementation.
 pub fn permute(scores: &[(String, i64)], magic: &[u8]) -> Vec<String> {
+    if !magic.is_empty() && magic.len() != 8 {
+        panic!("magic must be 0 or 8 bytes for STAR-TIE-512-v2");
+    }
     let mut candidates: Vec<(String, i64)> = scores.to_vec();
 
     // Build the canonical salt (also sorts candidates by UTF-8 name)
@@ -84,7 +80,7 @@ mod tests {
         ];
         let result = permute(&scores, b"");
         let joined: String = result.iter().map(|s| s.as_str()).collect();
-        assert_eq!(joined, "BEACD");
+        assert_eq!(joined, "CBDEA");
     }
 
     #[test]
@@ -104,7 +100,7 @@ mod tests {
             ("E".into(), 4),
         ];
         let r1 = permute(&scores, b"");
-        let r2 = permute(&scores, &[42]);
+        let r2 = permute(&scores, &0u64.to_le_bytes());
         assert_ne!(r1, r2);
     }
 
@@ -119,17 +115,17 @@ mod tests {
         ];
         let join = |r: &[String]| -> String { r.iter().map(|s| s.as_str()).collect() };
 
-        assert_eq!(join(&permute(&scores, &0u64.to_le_bytes())), "ABCDE");
-        assert_eq!(join(&permute(&scores, &1u64.to_le_bytes())), "BACED");
-        assert_eq!(join(&permute(&scores, &2u64.to_le_bytes())), "CDBEA");
-        assert_eq!(join(&permute(&scores, &3u64.to_le_bytes())), "EBCDA");
+        assert_eq!(join(&permute(&scores, &0u64.to_le_bytes())), "ADBEC");
+        assert_eq!(join(&permute(&scores, &1u64.to_le_bytes())), "DABEC");
+        assert_eq!(join(&permute(&scores, &2u64.to_le_bytes())), "CAEBD");
+        assert_eq!(join(&permute(&scores, &3u64.to_le_bytes())), "DBCAE");
     }
 
     #[test]
     fn int2bytes_encodes_correctly() {
-        assert_eq!(int2bytes(0), vec![0, 0]);
-        assert_eq!(int2bytes(1), vec![0, 1, 0]);
-        assert_eq!(int2bytes(256), vec![0, 0, 1, 0]);
+        assert_eq!(int2bytes(0), [0, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(int2bytes(1), [1, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(int2bytes(256), [0, 1, 0, 0, 0, 0, 0, 0]);
     }
 
     #[test]
@@ -143,6 +139,6 @@ mod tests {
         let result = permute(&scores, b"");
         assert_eq!(result.len(), 4);
         let joined: String = result.iter().map(|s| s.as_str()).collect();
-        assert_eq!(joined, "BDCA");
+        assert_eq!(joined, "BACD");
     }
 }
