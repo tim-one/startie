@@ -16,9 +16,9 @@ fn int2bytes(n: i64) -> [u8; 8] {
     (n as u64).to_le_bytes()
 }
 
-/// Build the canonical salt: SHA-512 state after hashing VERSION + magic +
+/// Build the canonical salt digest: SHA-512 digest of VERSION + magic +
 /// all scores in UTF-8-sorted name order.
-fn canonical_salt(candidates: &mut [(String, i64)], magic: &[u8]) -> Sha512 {
+fn canonical_salt_digest(candidates: &mut [(String, i64)], magic: &[u8]) -> Vec<u8> {
     let mut h = Sha512::new();
     h.update(VERSION);
     h.update(magic);
@@ -30,14 +30,15 @@ fn canonical_salt(candidates: &mut [(String, i64)], magic: &[u8]) -> Sha512 {
     for (_, score) in candidates.iter() {
         h.update(int2bytes(*score));
     }
-    h
+    h.finalize().to_vec()
 }
 
-/// Compute the sort key for a single candidate: hash(salt + name_utf8).
-fn make_key(name_utf8: &[u8], salt: &Sha512) -> Vec<u8> {
-    let mut h = salt.clone();
+/// Compute the sort key for a single candidate: hash(salt_digest + name_utf8).
+fn make_key(name_utf8: &[u8], salt_digest: &[u8]) -> Vec<u8> {
+    let mut h = Sha512::new();
+    h.update(salt_digest);
     h.update(name_utf8);
-    h.finalize_reset().to_vec()
+    h.finalize().to_vec()
 }
 
 /// Return a deterministic pseudo-random permutation of candidate names.
@@ -52,13 +53,13 @@ pub fn permute(scores: &[(String, i64)], magic: &[u8]) -> Vec<String> {
     }
     let mut candidates: Vec<(String, i64)> = scores.to_vec();
 
-    // Build the canonical salt (also sorts candidates by UTF-8 name)
-    let salt = canonical_salt(&mut candidates, magic);
+    // Build the canonical salt digest (also sorts candidates by UTF-8 name)
+    let salt_digest = canonical_salt_digest(&mut candidates, magic);
 
     // Compute hash keys and sort by them
     let mut keyed: Vec<(Vec<u8>, String)> = candidates
         .iter()
-        .map(|(name, _)| (make_key(name.as_bytes(), &salt), name.clone()))
+        .map(|(name, _)| (make_key(name.as_bytes(), &salt_digest), name.clone()))
         .collect();
     keyed.sort_by(|a, b| a.0.cmp(&b.0));
 
@@ -80,7 +81,7 @@ mod tests {
         ];
         let result = permute(&scores, b"");
         let joined: String = result.iter().map(|s| s.as_str()).collect();
-        assert_eq!(joined, "CBDEA");
+        assert_eq!(joined, "ABDEC");
     }
 
     #[test]
@@ -115,10 +116,10 @@ mod tests {
         ];
         let join = |r: &[String]| -> String { r.iter().map(|s| s.as_str()).collect() };
 
-        assert_eq!(join(&permute(&scores, &0u64.to_le_bytes())), "ADBEC");
-        assert_eq!(join(&permute(&scores, &1u64.to_le_bytes())), "DABEC");
-        assert_eq!(join(&permute(&scores, &2u64.to_le_bytes())), "CAEBD");
-        assert_eq!(join(&permute(&scores, &3u64.to_le_bytes())), "DBCAE");
+        assert_eq!(join(&permute(&scores, &0u64.to_le_bytes())), "CBDEA");
+        assert_eq!(join(&permute(&scores, &1u64.to_le_bytes())), "ADCEB");
+        assert_eq!(join(&permute(&scores, &2u64.to_le_bytes())), "CADEB");
+        assert_eq!(join(&permute(&scores, &3u64.to_le_bytes())), "DCABE");
     }
 
     #[test]
@@ -139,6 +140,6 @@ mod tests {
         let result = permute(&scores, b"");
         assert_eq!(result.len(), 4);
         let joined: String = result.iter().map(|s| s.as_str()).collect();
-        assert_eq!(joined, "BACD");
+        assert_eq!(joined, "DBAC");
     }
 }

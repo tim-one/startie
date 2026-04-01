@@ -192,18 +192,18 @@ def _int2bytes(n: int) -> bytes:
     return n.to_bytes(8, 'little', signed=False)
 
 def _canonical_salt(cands: list[Candidate],
-                    magic: bytes=b'') -> hashlib._hashlib.HASH:
+                    magic: bytes=b'') -> bytes:
     h = hashlib.sha512(VERSION + magic)
     # Sort candidate names by raw UTF-8 bytes.
     cands.sort(key=_get_utf)
     # Hash the scorea in order of UTF-8.
     h.update(b''.join(map(_int2bytes,
                           map(_get_stars, cands))))
-    return h
+    return h.digest()
 
 def _make_key(cand: Candidate,
-              salt: hashlib._hashlib.HASH) -> bytes:
-    h: hashlib._hashlib.HASH = salt.copy()
+              salt_digest: bytes) -> bytes:
+    h = hashlib.sha512(salt_digest)
     h.update(cand.utf)
     return h.digest()
 
@@ -213,9 +213,9 @@ def permute(score: dict[str, int],
         raise ValueError("magic must be 0 or 8 bytes for STAR-TIE-512-v2")
     cands: list[Candidate] = [Candidate(*pair)
                               for pair in score.items()]
-    salt: hashlib._hashlib.HASH = _canonical_salt(cands, magic)
+    salt_digest = _canonical_salt(cands, magic)
     for cand in cands:
-        cand.hash = _make_key(cand, salt)
+        cand.hash = _make_key(cand, salt_digest)
     cands.sort(key=_get_hash)
     return list(map(_get_name, cands))
 
@@ -223,7 +223,7 @@ def permute(score: dict[str, int],
 # score = {"Alice": 5, "Bob": 3, "Charlie": 7}
 # print(permute(score))
 
-assert _canonical_salt([]).hexdigest() == hashlib.sha512(VERSION).hexdigest()
+assert _canonical_salt([]) == hashlib.sha512(VERSION).digest()
 
 if __name__ == "__main__":
     import doctest

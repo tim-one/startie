@@ -20,52 +20,37 @@ Suffice it to say that all known problems appear to have been worked out, and re
 
 ## API
 
-The primary files are `permute.py` and `permute.js`. Each supplies one function, `permute(score, magic=)`. which takes a dict (Python, or Object in Node) mapping names (Unicode strings) to scores (ints), and returns a deterministic permutation of the names (score dict keys). `magic` is a required 8-byte entropy injection for adversarial/high-stakes use, with 0 bytes allowed only for non-adversarial compatibility testing. Use Python's `secrets.token_bytes(8)` or Node's `crypto.randomBytes(8)`.
+The primary files are `permute.py`, `permute.js`, and `rust/src/lib.rs`. Each supplies a function `permute(score, magic)` which takes a mapping from names (Unicode strings) to scores (non-negative integers) and returns a deterministic permutation of the names.
+
+**V2 Protocol:** For STAR-TIE-512-v2, `magic` is a **mandatory** 8-byte entry injection. Use `secrets.token_bytes(8)` in Python or `crypto.randomBytes(8)` in Node. This prevents bias and manipulation.
 
 #### Python
 
 ```python
 def permute(score: dict[str, int],
-            magic: bytes=b'') -> list[str]:
-```
-
-```python
-$ py
->>> from permute import permute
->>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-['B', 'D', 'C', 'A']
->>> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, bytes([42]))
-['D', 'A', 'B', 'C']
-
+            magic: bytes) -> list[str]:
 ```
 
 #### Node.js
 
 ```js
-const EMPTY_BUFFER = Buffer.alloc(0);
-
-function permute(score, magic=EMPTY_BUFFER) {
+function permute(score, magic)
 ```
 
-- `score` is an `Object` with string properties and int values.
-- `magic` is a Node `Buffer` of little ints, a subclass of `Uint8Array`.
+- `score` is an `Object` with string keys and integer values.
+- `magic` is a 8-byte `Buffer`.
 
-```js
-$ node
-Welcome to Node.js v24.11.1.
-Type ".help" for more information.
-> {permute} = require("./permute")
-{ permute: [Function: permute] }
-> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1})
-[ 'B', 'D', 'C', 'A' ]
-> permute({'A': 1, 'B': 1, 'C': 1, 'D': 1}, Buffer.from([42]))
-[ 'D', 'A', 'B', 'C' ]
+#### Rust
 
+```rust
+pub fn permute(scores: &[(String, i64)], magic: &[u8]) -> Vec<String>
 ```
 
-#### All implementations
+### Protocol v2 Changes
 
-Using `magic` is mandatory for any adversarial or high-stakes election. Without it, there are known insecurities, as explained in "Limitations" below, and permutations can be predicted or manipulated. An 8-byte "really random" `magic` expands the search space for all known attacks by a factor of $$2^{64}$$.
+The v2 protocol fixes a statistical bias discovered in the v1 implementation. It ensures that the salt and candidate keys are properly independent by hashing the salt before using it as a prefix for candidate name hashes. It also standardizes on 8-byte little-endian fixed-width encoding for all integers to prevent collision attacks.
+
+Using `magic` is mandatory for any adversarial or high-stakes election. An 8-byte "really random" `magic` prevents any prediction or manipulation of the permutation before the election is finalized.
 
 Note that `permute()` is intended to be called exactly once per election, after the election is closed, to prepare for possible ties in the scoring phase. The code is written for clarity & simplicity rather than speed, but it's so fast you won't notice anyway. Time and RAM use scale with the number of candidates, which is never "large". The number of ballots is irrelevant
 

@@ -35,12 +35,14 @@ function canonicalSalt(items, magic) {
   for (const item of items) {
     buffers.push(item.stars);
   }
-  return Buffer.concat(buffers);
+  const h = crypto.createHash('sha512');
+  h.update(Buffer.concat(buffers));
+  return h.digest();
 }
 
-function makeKey(utf, salt) {
+function makeKey(utf, saltDigest) {
   const h = crypto.createHash('sha512');
-  h.update(salt);
+  h.update(saltDigest);
   h.update(utf);
   return h.digest();
 }
@@ -52,10 +54,10 @@ function permute(score, magic=EMPTY_BUFFER) {
     throw new Error("magic must be 0 or 8 bytes for STAR-TIE-512-v2");
   }
   const items = makeItems(score);
-  const salt = canonicalSalt(items, magic);
+  const saltDigest = canonicalSalt(items, magic);
   // create crypto hashes
   for (const item of items) {
-    item.hash = makeKey(item.utf, salt);
+    item.hash = makeKey(item.utf, saltDigest);
   }
   // and return names sorted by hash
   items.sort((a, b) => a.hash.compare(b.hash));
